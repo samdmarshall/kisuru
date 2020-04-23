@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: jiro4989/setup-nim-action@v1.0.2
+      - uses: actions/checkout
       - name: Build
         run: nimble build --accept
   test:
@@ -17,6 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: jiro4989/setup-nim-action@v1.0.2
+      - uses: actions/checkout
       - name: Test Project
         run: nimble test --accept
 
