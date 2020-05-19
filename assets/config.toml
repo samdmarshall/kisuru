@@ -1,0 +1,4 @@
+
+[General]
+database = "tome.db"
+version = 1
