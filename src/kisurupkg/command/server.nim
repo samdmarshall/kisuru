@@ -4,15 +4,13 @@
 # =======
 
 # Standard Library Imports
-import os
-import uri
 import json
 import asyncdispatch
 
 # Third Party Package Imports
 import jester
-import "../../../httpauth/httpauth.nim"
 #import httpauth
+import "../../../httpauth/httpauth.nim"
 
 # Package Imports
 #import kisurupkg / [ users, twitter ]
@@ -32,7 +30,7 @@ import "../config.nim"
 
 #
 #
-proc parseServerCommand*(config: Configuration, args: seq[string]): bool =
+proc parseServerCommand*(config: Configuration, setServerPort: int): bool =
   var auth = prepareUserDatabase()
 
   # ============
@@ -79,7 +77,7 @@ proc parseServerCommand*(config: Configuration, args: seq[string]): bool =
   router Kisuru:
     extend Interface, "/api/v1"
 
-  var config = newSettings()
+  var config = newSettings(port = Port(setServerPort))
   var website = initJester(Kisuru, config)
   website.serve()
 

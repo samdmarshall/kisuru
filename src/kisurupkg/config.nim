@@ -9,11 +9,6 @@ import strformat
 
 import parsetoml
 
-# =========
-# Constants
-# =========
-
-const DefaultConfigPath* = getConfigDir() / "tome" / "config.toml"
 
 # =====
 # Types
@@ -41,7 +36,7 @@ proc loadConfiguration*(path: string): Configuration =
   result.path = path
 
   let data = parseFile(result.path)
-  
+
   if data.hasKey("General"):
     for key, value in data["General"].tableVal.pairs():
       if key == "database":

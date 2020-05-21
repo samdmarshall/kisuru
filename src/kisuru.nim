@@ -6,6 +6,7 @@
 import commandeer
 
 import kisurupkg/config
+import kisurupkg/defaults
 import kisurupkg/command/[ add, remove, search, server, usage, version ]
 
 # =====
@@ -35,7 +36,8 @@ proc main() =
       arguments Search_Arguments, string
       exitoption "help", "h", cmdUsage("search")
     subcommand Command_Server, ["server"]:
-      arguments Server_Arguments, string
+      option setServerPort, int, "port", "p", DefaultServerPort
+      exitoption "help", "h", cmdUsage("server")
     subcommand Command_Usage, ["help", "usage"]:
       arguments Usage_Arguments, string, false
       exitoption "help", "h", cmdUsage("help")
@@ -49,7 +51,7 @@ proc main() =
     let result = parseUsageCommand(Usage_Arguments)
 
   if Command_Version:
-    echo cmdVersion()
+    let result = parseVersionCommand()
 
   if Command_Add:
     let result = parseAddCommand(config, Add_Arguments)
@@ -61,7 +63,7 @@ proc main() =
     let result = parseSearchCommand(config, Search_Arguments)
 
   if Command_Server:
-    let result = parseServerCommand(config, Server_Arguments)
+    let result = parseServerCommand(config, setServerPort)
 
 when isMainModule:
   main()

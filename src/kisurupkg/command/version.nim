@@ -5,14 +5,8 @@
 
 import strformat
 
-
-# =========
-# Constants
-# =========
-
-const
-  NimblePkgName {.strdefine.} = ""
-  NimblePkgVersion {.strdefine.} = ""
+#import kisurupkg/defaults
+import "../defaults.nim"
 
 # =========
 # Functions
@@ -21,3 +15,5 @@ const
 proc cmdVersion*(): string =
   result = fmt"{NimblePkgName} v{NimblePkgVersion}"
 
+proc parseVersionCommand*(): bool =
+  echo cmdVersion()
