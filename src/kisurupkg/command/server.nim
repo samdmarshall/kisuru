@@ -18,6 +18,8 @@ import "../users.nim"
 import "../twitter.nim"
 #import kisurupkg/config
 import "../config.nim"
+#import kisurupkg/command/[search]
+import "../command/search.nim"
 
 # =========
 # Functions
@@ -60,6 +62,11 @@ proc parseServerCommand*(config: Configuration, setServerPort: int): bool =
 
     post "/twitter-gif":
       handleTwitterGif(request)
+      resp Http200
+
+    get "/@user/query":
+      let user = @"user"
+      let query = request.body
       resp Http200
 
     get "/@user/latest":

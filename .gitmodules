@@ -1,0 +1,3 @@
+[submodule "httpauth"]
+  path = httpauth
+  url = https://github.com/FedericoCeratto/nim-httpauth

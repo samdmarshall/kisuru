@@ -1,0 +1,29 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "lldb",
+      "request": "custom",
+      "name": "Custom launch",
+      "targetCreateCommands": [
+        "target create ${workspaceFolder}/build/kisuru"
+      ],
+      "processCreateCommands": [
+        "settings set target.run-args help",
+        "process launch"
+      ]
+    },
+   {
+      "type": "gdb",
+      "gdbpath": "/brew/bin/gdb",
+      "request": "launch",
+      "name": "Debug",
+      "target": "./build/kisuru",
+      "cwd": "${workspaceRoot}",
+      "valuesFormatting": "parseText"
+    }
+  ]
+}

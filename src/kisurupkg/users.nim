@@ -7,10 +7,10 @@ import os
 import sequtils
 
 # Third Party Package Imports
-import "../../httpauth/httpauth.nim"
 #import httpauth
-import "../../httpauth/httpauthpkg/base.nim"
+import "../../httpauth/httpauth.nim"
 #import httpauth/base
+import "../../httpauth/httpauthpkg/base.nim"
 
 # Package Imports
 

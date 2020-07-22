@@ -17,7 +17,7 @@ backend       = "c"
 requires "nim >= 1.2.0"
 
 requires "jester >= 0.4.3"
-#requires "httpauth#head"
+#requires "httpauth"
 requires "libsodium"
 
 requires "commandeer"

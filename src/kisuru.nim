@@ -2,11 +2,11 @@
 # Imports
 # =======
 
-
+# Third Party Package Imports
 import commandeer
 
-import kisurupkg/config
-import kisurupkg/defaults
+# Package Imports
+import kisurupkg/[ config, defaults ]
 import kisurupkg/command/[ add, remove, search, server, usage, version ]
 
 # =====
@@ -24,6 +24,7 @@ import kisurupkg/command/[ add, remove, search, server, usage, version ]
 # ===========
 
 proc main() =
+
   commandline:
     option setConfigurationPath, string, "config", "c", DefaultConfigPath
     subcommand Command_Add, ["add"]:
@@ -33,15 +34,17 @@ proc main() =
       arguments Remove_Arguments, string
       exitoption "help", "h", cmdUsage("remove")
     subcommand Command_Search, ["search", "query"]:
-      arguments Search_Arguments, string
+      option setListTags, bool, "list-tags", ""
+      arguments Search_Arguments, string, atLeast1 = false
       exitoption "help", "h", cmdUsage("search")
     subcommand Command_Server, ["server"]:
       option setServerPort, int, "port", "p", DefaultServerPort
       exitoption "help", "h", cmdUsage("server")
     subcommand Command_Usage, ["help", "usage"]:
-      arguments Usage_Arguments, string, false
+      arguments Usage_Arguments, string, atLeast1 = false
       exitoption "help", "h", cmdUsage("help")
     subcommand Command_Version, ["version"]:
+      option setDetailedVersion, bool, "detailed", "d", DefaultDetailedVersion
       exitoption "help", "h", cmdUsage("version")
     exitoption "help", "h", cmdUsage()
 
@@ -51,7 +54,7 @@ proc main() =
     let result = parseUsageCommand(Usage_Arguments)
 
   if Command_Version:
-    let result = parseVersionCommand()
+    let result = parseVersionCommand(setDetailedVersion)
 
   if Command_Add:
     let result = parseAddCommand(config, Add_Arguments)
@@ -60,7 +63,7 @@ proc main() =
     let result = parseRemoveCommand(config, Remove_Arguments)
 
   if Command_Search:
-    let result = parseSearchCommand(config, Search_Arguments)
+    let result = parseSearchCommand(config, setListTags, Search_Arguments)
 
   if Command_Server:
     let result = parseServerCommand(config, setServerPort)
