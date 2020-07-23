@@ -3,6 +3,7 @@
 # Imports
 # =======
 
+import logging
 import db_sqlite
 import strformat
 import parseutils
@@ -20,56 +21,66 @@ const
   TableName_Tags = "tags"
   TableName_BookmarkTags = "bookmark_tags"
 
-  CreateTable_Bookmarks = sql"""CREATE TABLE IF NOT EXISTS bookmarks (
-    id          INTEGER   PRIMARY KEY AUTOINCREMENT,
-    name        TEXT      NOT NULL UNIQUE,
-    url         TEXT      NOT NULL UNIQUE
-  )"""
+  KeyName_Bookmarks_Id = "id"
+  KeyName_Bookmarks_Name = "name"
+  KeyName_Bookmarks_Url = "url"
 
-  CreateTable_Tags = sql"""CREATE TABLE IF NOT EXISTS tags (
-    id            INTEGER   PRIMARY KEY AUTOINCREMENT,
-    name          TEXT      NOT NULL UNIQUE
-  )"""
+  KeyName_Tags_Id = "id"
+  KeyName_Tags_Name = "name"
 
-  CreateTable_BookmarkTags = sql"""CREATE TABLE IF NOT EXISTS bookmark_tags (
-    bookmark_id   INTEGER,
-    tag_id        INTEGER,
+  KeyName_BookmarkTags_BookmarkId = "bookmark_id"
+  KeyName_BookmarkTags_TagId = "tag_id"
 
-    PRIMARY KEY (bookmark_id, tag_id),
+  CreateTable_Bookmarks = sql(fmt"""CREATE TABLE IF NOT EXISTS {TableName_Bookmarks} (
+    {KeyName_Bookmarks_Id}          INTEGER   PRIMARY KEY AUTOINCREMENT,
+    {KeyName_Bookmarks_Name}        TEXT      NOT NULL UNIQUE,
+    {KeyName_Bookmarks_Url}         TEXT      NOT NULL UNIQUE
+  )""")
 
-    FOREIGN KEY (bookmark_id)
-      REFERENCES bookmarks (id)
+  CreateTable_Tags = sql(fmt"""CREATE TABLE IF NOT EXISTS {TableName_Tags} (
+    {KeyName_Tags_Id}            INTEGER   PRIMARY KEY AUTOINCREMENT,
+    {KeyName_Tags_Name}          TEXT      NOT NULL UNIQUE
+  )""")
+
+  CreateTable_BookmarkTags = sql(fmt"""CREATE TABLE IF NOT EXISTS {TableName_BookmarkTags} (
+    {KeyName_BookmarkTags_BookmarkId}   INTEGER,
+    {KeyName_BookmarkTags_TagId}        INTEGER,
+
+    PRIMARY KEY ({KeyName_BookmarkTags_BookmarkId}, {KeyName_BookmarkTags_TagId}),
+
+    FOREIGN KEY ({KeyName_BookmarkTags_BookmarkId})
+        REFERENCES {TableName_Bookmarks} ({KeyName_Bookmarks_Id})
          ON DELETE CASCADE
          ON UPDATE NO ACTION,
 
-    FOREIGN KEY (tag_id)
-      REFERENCES tags (id)
+    FOREIGN KEY ({KeyName_BookmarkTags_TagId})
+      REFERENCES {TableName_Tags} ({KeyName_Tags_Id})
          ON DELETE NO ACTION
          ON UPDATE NO ACTION
-  )"""
+  )""")
 
-  InsertTable_Bookmarks = sql"""INSERT INTO bookmarks (name, url) VALUES (?, ?)"""
-  InsertTable_Tags = sql"""INSERT INTO tags (name) VALUES (?)"""
-  InsertTable_BookmarkTags = sql"""INSERT INTO bookmark_tags (bookmark_id, tag_id) VALUES (?, ?)"""
+  InsertTable_Bookmarks = sql(fmt"""INSERT INTO {TableName_Bookmarks} ({KeyName_Bookmarks_Name}, {KeyName_Bookmarks_Url}) VALUES (?, ?)""")
+  InsertTable_Tags = sql(fmt"""INSERT INTO {TableName_Tags} ({KeyName_Tags_Name}) VALUES (?)""")
+  InsertTable_BookmarkTags = sql(fmt"""INSERT INTO {TableName_BookmarkTags} ({KeyName_BookmarkTags_BookmarkId}, {KeyName_BookmarkTags_TagId}) VALUES (?, ?)""")
 
-  SelectIdentifier_Bookmarks_Name = sql"""SELECT id FROM bookmarks WHERE name IS (?)"""
-  SelectIdentifier_Bookmarks_Url = sql"""SELECT id FROM bookmarks WHERE url IS (?)"""
-  SelectIdentifier_Tags = sql"""SELECT id FROM tags WHERE name IS (?)"""
-  SelectIdentifier_BookmarkTags_Bookmark = sql"""SELECT tag_id FROM bookmark_tags WHERE bookmark_id IS (?)"""
-  SelectIdentifier_BookmarkTags_Tag = sql"""SELECT bookmark_id FROM bookmark_tags WHERE tag_id IS (?)"""
+  SelectIdentifier_Bookmarks_Name = sql(fmt"""SELECT {KeyName_Bookmarks_Id} FROM {TableName_Bookmarks} WHERE {KeyName_Bookmarks_Name} IS (?)""")
+  SelectIdentifier_Bookmarks_Url = sql(fmt"""SELECT {KeyName_Bookmarks_Id} FROM {TableName_Bookmarks} WHERE {KeyName_Bookmarks_Url} IS (?)""")
+  SelectIdentifier_Tags = sql(fmt"""SELECT {KeyName_Tags_Id} FROM {TableName_Tags} WHERE {KeyName_Tags_Name} IS (?)""")
+  SelectIdentifier_BookmarkTags_Bookmark = sql(fmt"""SELECT {KeyName_BookmarkTags_TagId} FROM {TableName_BookmarkTags} WHERE {KeyName_BookmarkTags_BookmarkId} IS (?)""")
+  SelectIdentifier_BookmarkTags_Tag = sql(fmt"""SELECT {KeyName_BookmarkTags_BookmarkId} FROM {TableName_BookmarkTags} WHERE {KeyName_BookmarkTags_TagId} IS (?)""")
 
-  SelectLatestIdentifier_Bookmarks = sql"""SELECT seq FROM sqlite_sequence WHERE name='bookmarks'"""
-  SelectLatestIdentifier_Tags = sql"""SELECT seq FROM sqlite_sequence WHERE name='tags'"""
+  SelectLatestIdentifier_Bookmarks = sql(fmt"""SELECT seq FROM sqlite_sequence WHERE name='{TableName_Bookmarks}'""")
+  SelectLatestIdentifier_Tags = sql(fmt"""SELECT seq FROM sqlite_sequence WHERE name='{TableName_Tags}'""")
 
-  GetObject_Bookmarks_Id = sql"""SELECT id,name,url FROM bookmarks WHERE id IS (?)"""
-  GetObject_Bookmarks_Name = sql"""SELECT id,name,url FROM bookmarks WHERE name IS (?)"""
-  GetObject_Bookmarks_Url = sql"""SELECT id,name,url FROM bookmarks WHERE url IS (?)"""
-  GetObject_Tags = sql"""SELECT id,name FROM tags WHERE name IS (?)"""
+  GetObject_Bookmarks_Id = sql(fmt"""SELECT {KeyName_Bookmarks_Id},{KeyName_Bookmarks_Name},{KeyName_Bookmarks_Url} FROM {TableName_Bookmarks} WHERE {KeyName_Bookmarks_Id} IS (?)""")
+  GetObject_Bookmarks_Name = sql(fmt"""SELECT {KeyName_Bookmarks_Id},{KeyName_Bookmarks_Name},{KeyName_Bookmarks_Url} FROM {TableName_Bookmarks} WHERE {KeyName_Bookmarks_Name} IS (?)""")
+  GetObject_Bookmarks_Url = sql(fmt"""SELECT {KeyName_Bookmarks_Id},{KeyName_Bookmarks_Name},{KeyName_Bookmarks_Url} FROM {TableName_Bookmarks} WHERE {KeyName_Bookmarks_Url} IS (?)""")
+  GetObject_Tags = sql(fmt"""SELECT id,name FROM {TableName_Tags} WHERE {KeyName_Tags_Name} IS (?)""")
 
-  DeleteObject_Bookmarks = sql"""DELETE FROM bookmarks WHERE id IS (?)"""
-  DeleteObject_Tags = sql"""DELETE FROM tags WHERE id IS (?)"""
-  Delete_BookmarkTags_Bookmark = sql"""DELETE FROM bookmark_tags WHERE bookmark_id IS (?)"""
-  Delete_BookmarkTags_Tag = sql"""DELETE FROM bookmark_tags WHERE tag_id IS (?)"""
+  DeleteObject_Bookmarks = sql(fmt"""DELETE FROM {TableName_Bookmarks} WHERE {KeyName_Bookmarks_Id} IS (?)""")
+  DeleteObject_Tags = sql(fmt"""DELETE FROM {TableName_Tags} WHERE {KeyName_Tags_Id} IS (?)""")
+  Delete_BookmarkTags_Bookmark = sql(fmt"""DELETE FROM {TableName_BookmarkTags} WHERE {KeyName_BookmarkTags_BookmarkId} IS (?)""")
+  Delete_BookmarkTags_Tag = sql(fmt"""DELETE FROM {TableName_BookmarkTags} WHERE {KeyName_BookmarkTags_TagId} IS (?)""")
 
 #[
 
@@ -203,15 +214,28 @@ proc insertEntry*(db: DbConn, bookmark: Bookmark): bool =
   let bookmark_id = db.tryInsertID(InsertTable_Bookmarks, bookmark.name, bookmark.url)
 
   for tag in bookmark.tags:
-    let id_str = db.getValue(SelectIdentifier_Tags, tag)
+    let id_str = db.getValue(SelectIdentifier_Tags, tag.name)
     var tag_id: int64
     discard parseInt(id_str, cast[var int](tag_id))
     if tag_id == 0:
       tag_id = db.tryInsertID(InsertTable_Tags, tag)
     result = db.tryExec(InsertTable_BookmarkTags, bookmark_id, tag_id)
     if not result:
-      echo fmt"failed to link bookmark: {bookmark_id} to tag: {tag_id}"
+      error(fmt"failed to link bookmark: {bookmark_id} to tag: {tag_id}")
 
+#
+#
+proc getNextBookmarkId*(db: DbConn): int64 =
+  let bookmark_id = db.getValue(SelectLatestIdentifier_Bookmarks)
+  discard parseInt(bookmark_id, cast[var int](result))
+  result += 1
+
+#
+#
+proc getNextTagId*(db: DbConn): int64 =
+  let tag_id = db.getValue(SelectLatestIdentifier_Tags)
+  discard parseInt(tag_id, cast[var int](result))
+  result += 1
 
 #
 #

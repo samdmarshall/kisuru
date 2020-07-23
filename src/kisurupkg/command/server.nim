@@ -5,6 +5,7 @@
 
 # Standard Library Imports
 import json
+import logging
 import asyncdispatch
 
 # Third Party Package Imports
@@ -12,70 +13,206 @@ import jester
 #import httpauth
 import "../../../httpauth/httpauth.nim"
 
-# Package Imports
-#import kisurupkg / [ users, twitter ]
+# Local Package Imports
+#import kisurupkg / [ config, users, twitter, defaults ]
 import "../users.nim"
 import "../twitter.nim"
-#import kisurupkg/config
 import "../config.nim"
-#import kisurupkg/command/[search]
+import "../defaults.nim"
+#import kisurupkg/command/[ add, remove, search ]
+import "../command/add.nim"
+import "../command/remove.nim"
 import "../command/search.nim"
 
 # =========
 # Functions
 # =========
 
-
-# ==========
-# Main Entry
-# ==========
-
 #
 #
 proc parseServerCommand*(config: Configuration, setServerPort: int): bool =
-  var auth = prepareUserDatabase()
+  var auth = prepareUserDatabase(config.users_db_path, config.admin_username, config.admin_password)
 
   # ============
   # Routing Maps
   # ============
 
   router Authentication:
-    post "/login":
+    post "/register":
+      #[
+        {
+          "auth": {
+            "username": "...",
+            "password": "..."
+          },
+          "body": {
+            "username": "...",
+            "password": "...",
+            "level": "user"
+          }
+        }
+      ]#
       auth.headers_hook(request.headers)
+      let payload = parseJson(request.body)
+      let username = $payload["auth"]["username"]
+      let password = $payload["auth"]["password"]
       try:
-        auth.login(@"username", @"password")
-        resp Http200
-      except LoginError:
+        auth.login(username, password)
+
+        let user = auth.current_user()
+        let did_login = user.username == username
+
+        let register_username = $payload["body"]["username"]
+        let register_password = $payload["body"]["password"]
+        let register_role = $payload["body"]["role"]
+
+        let did_succeed = createNewUser(config, auth, register_username, register_password, register_role)
+        if not did_succeed:
+          fatal("Failed to create new user!")
+
+        auth.logout()
+      except:
         resp Http401
 
-    get "/logout":
+    post "/validate":
+      #[
+        {
+          "auth": {
+            "username": "...",
+            "password": "..."
+          }
+        }
+      ]#
+      auth.headers_hook(request.headers)
+      let payload = parseJson(request.body)
+      let username = $payload["auth"]["username"]
+      let password = $payload["auth"]["password"]
       try:
+        auth.login(username, password)
+
+        let user = auth.current_user()
+        let did_login = user.username == username
+
         auth.logout()
-        resp Http200
-      except AuthError:
+      except:
         resp Http401
 
   router Actions:
-    post "/new":
+    post "/add":
+      #[
+        {
+          "auth": {
+            "username": "...",
+            "password": "..."
+          },
+          "body": {
+            "name": "...",
+            "url": "...",
+            "tags": [ "..." ]
+          }
+        }
+      ]#
+      auth.headers_hook(request.headers)
       let payload = parseJson(request.body)
-      resp payload
+      let username = $payload["auth"]["username"]
+      let password = $payload["auth"]["password"]
+      try:
+        auth.login(username, password)
+
+        let user = auth.current_user()
+        let did_login = user.username == username
+
+        auth.logout()
+      except:
+        resp Http401
+
+    post "/remove":
+      #[
+        {
+          "auth": {
+            "username": "...",
+            "password": "..."
+          },
+          "body": {
+            "name": "...",
+            "url": "...",
+            "tags": [ "..." ]
+          }
+        }
+      ]#
+      auth.headers_hook(request.headers)
+      let payload = parseJson(request.body)
+      let username = $payload["auth"]["username"]
+      let password = $payload["auth"]["password"]
+      try:
+        auth.login(username, password)
+
+        let user = auth.current_user()
+        let did_login = user.username == username
+
+        auth.logout()
+      except:
+        resp Http401
+
+    post "/search":
+      #[
+        {
+          "auth": {
+            "username": "...",
+            "password": "..."
+          },
+          "body": {
+            "name": "...",
+            "url": "...",
+            "tags": [ "..." ]
+          }
+        }
+      ]#
+      auth.headers_hook(request.headers)
+      let payload = parseJson(request.body)
+      let username = $payload["auth"]["username"]
+      let password = $payload["auth"]["password"]
+      try:
+        auth.login(username, password)
+
+        let user = auth.current_user()
+        let did_login = user.username == username
+
+        if payload.hasKey("body"):
+          let search_by_name = payload["body"].hasKey("name")
+          let search_by_url = payload["body"].hasKey("url")
+          let search_by_tag = payload["body"].hasKey("tag")
+
+
+        auth.logout()
+      except:
+        resp Http401
 
     post "/twitter-gif":
-      handleTwitterGif(request)
-      resp Http200
+      #[
+        {
+          "auth": {
+            "username": "...",
+            "password": "..."
+          },
+          "body": {
+          }
+        }
+      ]#
+      auth.headers_hook(request.headers)
+      let payload = parseJson(request.body)
+      let username = $payload["auth"]["username"]
+      let password = $payload["auth"]["password"]
+      try:
+        auth.login(username, password)
 
-    get "/@user/query":
-      let user = @"user"
-      let query = request.body
-      resp Http200
+        let user = auth.current_user()
+        let did_login = user.username == username
+        #handleTwitterGif(request)
 
-    get "/@user/latest":
-      let user = @"user"
-      resp "latest from user: " & user
-
-    get "/@user/count":
-      let user = @"user"
-      resp "count from user (" & user & ") is: "
+        auth.logout()
+      except:
+        resp Http401
 
   router Interface:
     extend Authentication, ""
@@ -84,7 +221,10 @@ proc parseServerCommand*(config: Configuration, setServerPort: int): bool =
   router Kisuru:
     extend Interface, "/api/v1"
 
-  var config = newSettings(port = Port(setServerPort))
-  var website = initJester(Kisuru, config)
+  let server_port =
+    if setServerPort == DefaultServerPort: config.port
+    else: setServerPort
+  var site_settings = newSettings(port = Port(server_port))
+  var website = initJester(Kisuru, site_settings)
   website.serve()
 

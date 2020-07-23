@@ -4,6 +4,7 @@
 
 # Standard Library Imports
 import os
+import logging
 import sequtils
 
 # Third Party Package Imports
@@ -13,7 +14,9 @@ import "../../httpauth/httpauth.nim"
 import "../../httpauth/httpauthpkg/base.nim"
 
 # Package Imports
-
+#import kisurupkg/[ config, defaults ]
+import "defaults.nim"
+import "config.nim"
 
 # =========
 # Functions
@@ -26,21 +29,21 @@ proc authenticateUser*(user: string, token: string): bool =
 
 #
 #
-proc createNewUser*(auth: HttpAuth, user: string, pass: string): bool =
+proc createNewUser*(config: Configuration, auth: HttpAuth, user: string, pass: string, role: string): bool =
   try:
-    auth.require(role="admin")
-    auth.create_user(user, "user", pass)
+    auth.require(role=config.admin_username)
+    auth.create_user(user, pass, role, "", "")
     result = true
   except AuthError:
-    echo getCurrentExceptionMsg()
+    fatal(getCurrentExceptionMsg())
     result = false
 
 #
 #
-proc prepareUserDatabase*(): HttpAuth =
-  let backend = newSQLBackend("sqlite://" & absolutePath("assets" / "users.db"))
+proc prepareUserDatabase*(path: string = DefaultUsersDbPath, admin_username: string, admin_password: string): HttpAuth =
+  let backend = newSQLBackend("sqlite://" & path)
   result = newHTTPAuth("localhost", backend)
   var users = result.list_users()
-  keepIf[User](users, proc(x: User): bool = x.username == "admin")
+  keepIf[User](users, proc(x: User): bool = x.username == admin_username)
   if users.len == 0:
-    result.initialize_admin_user(password="1234abcd")
+    result.initialize_admin_user(password=admin_password)

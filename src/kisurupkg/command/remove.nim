@@ -3,6 +3,7 @@
 # Imports
 # =======
 
+import logging
 import db_sqlite
 import strformat
 
@@ -17,7 +18,8 @@ import "../parser.nim"
 # =========
 
 proc parseRemoveCommand*(config: Configuration, args: seq[string]): bool =
-  var db = config.initDatabase()
+  info("Initializing Database Connection...")
+  var db = initDatabase(config)
 
   for argument in args:
     let fragment = parseField(argument)
@@ -29,5 +31,5 @@ proc parseRemoveCommand*(config: Configuration, args: seq[string]): bool =
     of Fields.Tag:
       let entity = db.findTag(fragment.value)
 
-
+  info("Closing Database Connection...")
   db.close()

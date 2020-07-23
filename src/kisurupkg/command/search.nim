@@ -3,6 +3,7 @@
 # Imports
 # =======
 
+import logging
 import db_sqlite
 import strformat
 
@@ -17,7 +18,8 @@ import "../models.nim"
 # =========
 
 proc parseSearchCommand*(config: Configuration, setListTags: bool, args: seq[string]): bool =
-  var db = config.initDatabase()
+  info("Initializing Database Connection...")
+  var db = initDatabase(config)
 
   if setListTags:
     for tag in db.listTags():
@@ -44,4 +46,5 @@ URL: {entity.url}
 Tags: {entity.tags.join(", ")}"""
           echo ""
 
+  info("Closing Database Connection...")
   db.close()
