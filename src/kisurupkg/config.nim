@@ -5,6 +5,7 @@
 
 # Standard Library Imports
 import os
+import osproc
 import sequtils
 import strutils
 import strformat
@@ -27,7 +28,7 @@ type
     path*: string
     # General
     db_path: string # relative to `path.parentDir`
-    db_version: int
+    db_version*: int
     # Server
     users_db_path*: string # relative to `path.parentDir`
     port*: int
@@ -36,6 +37,10 @@ type
     admin_password*: string
     # Logging
     verbosity*: VerbosityLevel
+    # Account
+    account_username*: string
+    account_email*: string
+    account_password*: string
 
 
 
@@ -79,6 +84,19 @@ proc loadConfiguration*(path: string): Configuration {.raises: [OSError, KeyErro
     for key, value in logging.pairs():
       if key == "level":
         result.verbosity = parseEnum[VerbosityLevel](value.stringVal)
+  if data.hasKey("account"):
+    let account = data["account"].tableVal
+    for key, value in account.pairs():
+      if key == "username":
+        result.account_username = value.stringVal
+      if key == "email":
+        result.account_email = value.stringVal
+      if key == "password":
+        result.account_password = value.stringVal
+      if key == "password_cmd":
+        let (output,code) = execCmdEx(value.stringVal)
+        if code == 0:
+          result.account_password = output
 
 #
 #
@@ -88,5 +106,5 @@ proc dbPath*(config: Configuration): string =
 
 #
 #
-proc dbTable*(config: Configuration): string =
-  result = fmt"v{config.db_version}"
+proc composeTableName*(config: Configuration, name: string): string =
+  result = fmt"v{config.db_version}_{name}"

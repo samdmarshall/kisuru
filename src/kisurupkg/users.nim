@@ -40,7 +40,7 @@ proc createNewUser*(config: Configuration, auth: HttpAuth, user: string, pass: s
 
 #
 #
-proc prepareUserDatabase*(path: string = DefaultUsersDbPath, admin_username: string, admin_password: string): HttpAuth =
+proc prepareUserDatabase*(path: string = DefaultUsersDbPath, admin_username: string, admin_password: string): HTTPAuth =
   let backend = newSQLBackend("sqlite://" & path)
   result = newHTTPAuth("localhost", backend)
   var users = result.list_users()

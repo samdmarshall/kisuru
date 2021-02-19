@@ -4,6 +4,7 @@
 # =======
 
 import logging
+import strtabs
 import db_sqlite
 import strformat
 import parseutils
@@ -72,10 +73,13 @@ const
   SelectLatestIdentifier_Bookmarks = sql(fmt"""SELECT seq FROM sqlite_sequence WHERE name='{TableName_Bookmarks}'""")
   SelectLatestIdentifier_Tags = sql(fmt"""SELECT seq FROM sqlite_sequence WHERE name='{TableName_Tags}'""")
 
+  GetAll_Bookmarks = sql(fmt"""SELECT {KeyName_Bookmarks_Id},{KeyName_Bookmarks_Name},{KeyName_Bookmarks_Url} FROM {TableName_Bookmarks}""")
   GetObject_Bookmarks_Id = sql(fmt"""SELECT {KeyName_Bookmarks_Id},{KeyName_Bookmarks_Name},{KeyName_Bookmarks_Url} FROM {TableName_Bookmarks} WHERE {KeyName_Bookmarks_Id} IS (?)""")
   GetObject_Bookmarks_Name = sql(fmt"""SELECT {KeyName_Bookmarks_Id},{KeyName_Bookmarks_Name},{KeyName_Bookmarks_Url} FROM {TableName_Bookmarks} WHERE {KeyName_Bookmarks_Name} IS (?)""")
   GetObject_Bookmarks_Url = sql(fmt"""SELECT {KeyName_Bookmarks_Id},{KeyName_Bookmarks_Name},{KeyName_Bookmarks_Url} FROM {TableName_Bookmarks} WHERE {KeyName_Bookmarks_Url} IS (?)""")
-  GetObject_Tags = sql(fmt"""SELECT id,name FROM {TableName_Tags} WHERE {KeyName_Tags_Name} IS (?)""")
+  GetAll_Tags = sql(fmt"""SELECT {KeyName_Tags_Id},{KeyName_Tags_Name} FROM {TableName_Tags}""")
+  GetObject_Tags = sql(fmt"""SELECT {KeyName_Tags_Id},{KeyName_Tags_Name} FROM {TableName_Tags} WHERE {KeyName_Tags_Name} IS (?)""")
+  GetObject_Tags_Id = sql(fmt"""SELECT {KeyName_Tags_Name} FROM {TableName_Tags} WHERE {KeyName_Tags_Id} IS (?)""")
 
   DeleteObject_Bookmarks = sql(fmt"""DELETE FROM {TableName_Bookmarks} WHERE {KeyName_Bookmarks_Id} IS (?)""")
   DeleteObject_Tags = sql(fmt"""DELETE FROM {TableName_Tags} WHERE {KeyName_Tags_Id} IS (?)""")
@@ -177,8 +181,8 @@ proc findTag*(db: DbConn, name: string): Tag =
 proc findBookmarkById*[T: string|int64|int](db: DbConn, id: T): Bookmark =
   let entity = db.getRow(GetObject_Bookmarks_Id, id)
   result = newBookmark(entity[0], entity[1], entity[2])
-  for row in db.rows(sql"SELECT tag_id FROM bookmark_tags WHERE bookmark_id IS (?)", result.id):
-    let tag_name = db.getValue(sql"SELECT name FROM tags WHERE id IS (?)", row[0])
+  for row in db.rows(SelectIdentifier_BookmarkTags_Bookmark, result.id):
+    let tag_name = db.getValue(GetObject_Tags_Id, row[0])
     let tag = newTag(row[0],  tag_name)
     result.tags.add(tag)
 #
@@ -186,8 +190,8 @@ proc findBookmarkById*[T: string|int64|int](db: DbConn, id: T): Bookmark =
 proc findBookmarkByName*(db: DbConn, name: string): Bookmark =
   let entity = db.getRow(GetObject_Bookmarks_Name, name)
   result = newBookmark(entity[0], entity[1], entity[2])
-  for row in db.rows(sql"SELECT tag_id FROM bookmark_tags WHERE bookmark_id IS (?)", result.id):
-    let tag_name = db.getValue(sql"SELECT name FROM tags WHERE id IS (?)", row[0])
+  for row in db.rows(SelectIdentifier_BookmarkTags_Bookmark, result.id):
+    let tag_name = db.getValue(GetObject_Tags_Id, row[0])
     let tag = newTag(row[0],  tag_name)
     result.tags.add(tag)
 
@@ -196,8 +200,8 @@ proc findBookmarkByName*(db: DbConn, name: string): Bookmark =
 proc findBookmarkByUrl*(db: DbConn, url: string): Bookmark =
   let entity = db.getRow(GetObject_Bookmarks_Url, url)
   result = newBookmark(entity[0], entity[1], entity[2])
-  for row in db.rows(sql"SELECT tag_id FROM bookmark_tags WHERE bookmark_id IS (?)", result.id):
-    let tag_name = db.getValue(sql"SELECT name FROM tags WHERE id IS (?)", row[0])
+  for row in db.rows(SelectIdentifier_BookmarkTags_Bookmark, result.id):
+    let tag_name = db.getValue(GetObject_Tags_Id, row[0])
     let tag = newTag(row[0],  tag_name)
     result.tags.add(tag)
 
@@ -207,6 +211,35 @@ proc findBookmarksByTag*(db: DbConn, name: string): seq[Bookmark] =
   let tag = db.findTag(name)
   for row in db.rows(SelectIdentifier_BookmarkTags_Tag, tag.id):
     result.add(db.findBookmarkById(row[0]))
+
+#
+#
+proc findBookmarksByAttributes*(db: DbConn, attributes: StringTableRef): seq[Bookmark] =
+  let has_name = attributes.hasKey("name")
+  let has_url = attributes.hasKey("url")
+  let has_tag = attributes.hasKey("tag")
+  # Available Attibutes: Name
+  if has_name and not has_url and not has_tag:
+    result = @[db.findBookmarkByName(attributes["name"])]
+  # Available Attibutes: Url
+  if not has_name and has_url and not has_tag:
+    result = @[db.findBookmarkByUrl(attributes["url"])]
+  # Available Attibutes: Tag
+  if not has_name and not has_url and has_tag:
+    result = db.findBookmarksByTag(attributes["tag"])
+  # Available Attibutes: Name, Url
+  if has_name and has_url and not has_tag:
+    discard
+  # Available Attibutes: Name, Tag
+  if has_name and not has_url and has_tag:
+    discard
+  # Available Attibutes: Name, Url, Tag
+  if has_name and has_url and has_tag:
+    discard
+  # Available Attibutes: Url, Tag
+  if not has_name and has_url and has_tag:
+    discard
+
 
 #
 #
@@ -240,16 +273,16 @@ proc getNextTagId*(db: DbConn): int64 =
 #
 #
 iterator listTags*(db: DbConn): Tag =
-  for row in db.rows(sql"SELECT id,name FROM tags"):
+  for row in db.rows(GetAll_Tags):
     yield newTag(row[0], row[1])
 
 #
 #
 iterator listBookmarks*(db: DbConn): Bookmark =
-  for row in db.rows(sql"SELECT id,name,url FROM bookmarks"):
+  for row in db.rows(GetAll_Bookmarks):
     var bookmark = newBookmark(row[0], row[1], row[2])
-    for row in db.rows(sql"SELECT tag_id FROM bookmark_tags WHERE bookmark_id IS (?)", bookmark.id):
-      let tag_name = db.getValue(sql"SELECT name FROM tags WHERE id IS (?)", row[0])
+    for row in db.rows(SelectIdentifier_BookmarkTags_Bookmark, bookmark.id):
+      let tag_name = db.getValue(GetObject_Tags_Id, row[0])
       let tag = newTag(row[0],  tag_name)
       bookmark.tags.add(tag)
     yield bookmark

@@ -7,6 +7,6 @@
 
 import unittest
 
-import kisuru
+import kisurupkg
 
 

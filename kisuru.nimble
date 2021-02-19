@@ -6,17 +6,14 @@ description   = "a net for catching the ephemeral ghosts"
 license       = "BSD-3-Clause"
 
 srcDir        = "src/"
-
-bin           = @["kisuru"]
 binDir        = "build/"
-
-backend       = "c"
+bin           = @["kisuru"]
 
 # Dependencies
 
-requires "nim >= 1.2.0"
+requires "nim >= 1.4.2"
 
-requires "jester >= 0.4.3"
+requires "jester >= 0.5.0"
 #requires "httpauth"
 requires "libsodium"
 

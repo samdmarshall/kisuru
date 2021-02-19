@@ -13,3 +13,9 @@ port = 5000
 
 [logging]
 level = "debug"
+
+[account]
+username = "..."
+email = "..."
+password = "..."
+password_cmd = "..."
