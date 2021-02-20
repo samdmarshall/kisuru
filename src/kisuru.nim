@@ -3,16 +3,14 @@
 # =======
 
 # Standard Library Imports
-import logging
-import strutils
-import parseutils
+import strformat
 
 # Third Party Package Imports
+import jester
 import commandeer
 
 # Package Imports
-import kisurupkg/[ config, defaults, models ]
-import kisurupkg/command/[ add, remove, search, server, usage, version ]
+import kisurupkg/[ models, defaults, configuration, page ]
 
 # ===========
 # Entry Point
@@ -21,60 +19,41 @@ import kisurupkg/command/[ add, remove, search, server, usage, version ]
 proc main() =
 
   commandline:
-    option setConfigurationPath, string, Flag_Long_Config, Flag_Short_Config, DefaultConfigPath
-    option setVerbosity, string, Flag_Long_Verbosity, Flag_Short_Verbosity, DefaultVerbosityLevel
-    subcommand Command_Add, ["add", "insert"]:
-      arguments Add_Arguments, string
-      exitoption Flag_Long_Help, Flag_Short_Help, cmdUsage("add").join("\n")
-    subcommand Command_Remove, ["remove", "rm"]:
-      arguments Remove_Arguments, string
-      exitoption Flag_Long_Help, Flag_Short_Help, cmdUsage("remove").join("\n")
-    subcommand Command_Search, ["search", "query"]:
-      option setListTags, bool, Flag_Long_ListTags, ""
-      arguments Search_Arguments, string, atLeast1 = false
-      exitoption Flag_Long_Help, Flag_Short_Help, cmdUsage("search").join("\n")
-    subcommand Command_Server, ["server"]:
-      option setServerPort, int, Flag_Long_ServerPort, Flag_Short_ServerPort, DefaultServerPort
-      exitoption Flag_Long_Help, Flag_Short_Help, cmdUsage("server").join("\n")
-    subcommand Command_Usage, ["help", "usage"]:
-      arguments Usage_Arguments, string, atLeast1 = false
-      exitoption Flag_Long_Help, Flag_Short_Help, cmdUsage("help").join("\n")
-    subcommand Command_Version, ["version"]:
-      option setDetailedVersion, bool, Flag_Long_DetailedVersion, Flag_Short_DetailedVersion, DefaultDetailedVersion
-      exitoption Flag_Long_Help, Flag_Short_Help, cmdUsage("version").join("\n")
-    #subcommand Command_Edit, ["edit", "modify"]:
-    #  option set
-    #  exitoption Flag_Long_Help, Flag_Short_Help, cmdUsage("edit").join("\n")
-    exitoption Flag_Long_Help, Flag_Short_Help, cmdUsage().join("\n")
+    argument SitemapFile, string
+    exitoption Flag_Long_Help, Flag_Short_Help, fmt"usage: {NimblePkgName} [-{Flag_Short_Help}|--{Flag_Long_Help}] [-{Flag_Short_Version}|--{Flag_Long_Version}] <website.toml>"
+    exitoption Flag_Long_Version, Flag_Short_Version, fmt"{NimblePkgName} v{NimblePkgVersion}"
 
-  let config = loadConfiguration(setConfigurationPath)
-  let level = parseEnum[VerbosityLevel](setVerbosity, config.verbosity)
-  let logger = newConsoleLogger(levelThreshold = @(level))
-  logger.addHandler()
+  let conf = initConfiguration(SitemapFile)
 
-  if Command_Usage:
-    info("Recognized Command: help/usage")
-    let result = parseUsageCommand(Usage_Arguments)
+  router legacy:
+    discard
 
-  if Command_Version:
-    info("Recognized Command: version")
-    let result = parseVersionCommand(setDetailedVersion)
+  router pewpewthespells:
+    extend legacy, ""
 
-  if Command_Add:
-    info("Recognized Command: add/insert")
-    let result = parseAddCommand(config, Add_Arguments)
+    get "/@path?.?@ext?":
+      var page = conf.resolvePage(request)
+      case page.kind
+      of pkSource:
+        let is_cached = page.isCached(conf)
+        let is_outdated = page.isCacheOutdated(conf)
 
-  if Command_Remove:
-    info("Recognized Command: remove/rm")
-    let result = parseRemoveCommand(config, Remove_Arguments)
+        let should_update_cache = (not is_cached) or (is_cached and is_outdated)
+        if should_update_cache:
+          let page_contents = page.generate()
+          let successful_cache = page.updateCache(page_contents)
+          resp page_contents
+        else:
+          sendFile(page.cachePath)
 
-  if Command_Search:
-    info("Recognized Command: search/query")
-    let result = parseSearchCommand(config, setListTags, Search_Arguments)
+      of pkStatic:
+        sendFile(page.staticPath)
+      else:
+        halt()
 
-  if Command_Server:
-    info("Recognized Command: server")
-    let result = parseServerCommand(config, setServerPort)
+  var config = newSettings(port = conf.jesterPort)
+  var website = initJester(pewpewthespells, settings=config)
+  website.serve()
 
 when isMainModule:
   main()

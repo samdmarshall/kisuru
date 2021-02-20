@@ -6,31 +6,28 @@ description   = "a net for catching the ephemeral ghosts"
 license       = "BSD-3-Clause"
 
 srcDir        = "src/"
-
-bin           = @["kisuru"]
 binDir        = "build/"
-
-backend       = "c"
+bin           = @["kisuru"]
 
 # Dependencies
 
-requires "nim >= 1.2.0"
+requires "nim >= 1.4.2"
 
-requires "jester >= 0.4.3"
-#requires "httpauth"
-requires "libsodium"
-
+requires "jester >= 0.5.0"
 requires "commandeer"
 requires "parsetoml"
+requires "yaml"
+requires "uuids"
+
+requires "taskqueue"
 
 # Tasks
 
 task exec, "build and run the executable":
-  exec "nimble run -- --config:./assets/config.toml"
+  exec "nimble run -- ./content/pewpewthespells.toml"
 
 task clean, "Remove Build Artifacts":
   withDir projectDir():
-    rmFile "users.db"
     rmDir binDir
   rmDir nimcacheDir()
 

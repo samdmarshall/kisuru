@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html$if(lang)$ lang="$lang$"$endif$$if(dir)$ dir="$dir$"$endif$>
+<head>
+$if(disableheader)$$else$
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+$if(published)$
+	<meta name="published" content="$published$">
+$endif$
+$for(author-meta)$
+  <meta name="author" content="$author-meta$">
+$endfor$
+$if(date-meta)$
+  <meta name="dcterms.date" content="$date-meta$">
+$endif$
+$if(summary)$
+	<meta name="summary" content="$summary$">
+$endif$
+$if(keywords)$
+  <meta name="keywords" content="$for(keywords)$$keywords$$sep$, $endfor$">
+$endif$
+	<title>$if(title-prefix)$$title-prefix$ – $endif$$pagetitle$</title>
+  <style type="text/css">code{white-space: pre;}</style>
+$if(quotes)$
+  <style type="text/css">q { quotes: "“" "”" "‘" "’"; }</style>
+$endif$
+$if(published)$$else$
+	<style type="text/css">
+		#unpublished-blog-post {
+		position: fixed;
+		top: 0px;
+		left: 0px;
+		width: 100%;
+		background: red;
+		z-index: 10;
+		color: white;
+		font-size: 28px;
+		text-align: center;
+		}
+	</style>
+$endif$
+$if(highlighting-css)$
+  <style type="text/css">
+$highlighting-css$
+  </style>
+$endif$
+$for(css)$
+  <link rel="stylesheet" href="$css$">
+$endfor$
+$if(math)$
+  $math$
+$endif$
+$for(header-includes)$
+  $header-includes$
+$endfor$
+
+$endif$
+</head>
+<body>
+$if(published)$$else$
+	<div id="unpublished-blog-post">This page is not published yet, please do not share.</div>
+$endif$
+$for(include-before)$
+$include-before$
+$endfor$
+$if(title)$
+  <header>
+    <h1 class="title">$title$</h1>
+$if(subtitle)$
+    <h1 class="subtitle">$subtitle$</h1>
+$endif$
+  </header>
+$endif$
+$if(toc)$
+  <nav id="$idprefix$TOC">
+$toc$
+  </nav>
+$endif$
+$body$
+$for(include-after)$
+$include-after$
+$endfor$
+</body>
+<footer>
+$if(disablefooter)$$else$
+$if(root)$$else$
+  <br/>
+  <br/>
+  <br/>
+  <br/>
+  <br/>
+  <center>[ <a href="/">home</a> | <a href="./">parent</a> | <a href="#">top</a> ]</center>
+$endif$
+$endif$
+</footer>
+</html>

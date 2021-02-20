@@ -1,0 +1,16 @@
+
+[jester]
+port = 5000     # Defaults to "5000"
+
+[content]
+source = "public/"    # Defaults to "./public/"
+cache = "cache/"      # Defaults to "./cache/"
+static = "static/"    # Defaults to "./static/"
+
+[template]
+header = "header.template"     # Defaults to "./header.template"
+footer = "footer.template"     # Defaults to "./footer.template"
+
+[render]
+html = "html.template"
+plaintext = "plaintext.template"

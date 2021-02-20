@@ -1,49 +1,43 @@
 
-# =======
-# Imports
-# =======
-
-import os
-
-# =========
-# Constants
-# =========
-
 const
-  NimblePkgName*    {.strdefine.} = ""
+  # Defines from Nimble
+  NimblePkgName* {.strdefine.} = ""
   NimblePkgVersion* {.strdefine.} = ""
 
-  DefaultConfigPath* = getConfigDir() / NimblePkgName / "config.toml"
-  DefaultUsersDbPath* = getConfigDir() / NimblePkgName / "users.db"
-
-  DefaultServerPort* = 5000
-
-  DefaultDetailedVersion* = false
-
-  DefaultVerbosityLevel* = "none"
-
-  FieldDelimiters* = {':'}
-
-  DefaultAdminUsername* = "admin"
-  DefaultAdminPassword* = "1234abcd"
-
-  # =====
-  # Flags
-  # =====
-
+  # Command Line Flags
   Flag_Long_Help* = "help"
   Flag_Short_Help* = "h"
 
-  Flag_Long_Config* = "config"
-  Flag_Short_Config* = "c"
+  Flag_Long_Version* = "version"
+  Flag_Short_Version* = "v"
 
-  Flag_Long_DetailedVersion* = "detailed"
-  Flag_Short_DetailedVersion* = "d"
+  # Default Values
+  Default_Port_Number* = 5000
+  Default_Source_Dir* = "public"
+  Default_Cache_Dir* = "cache"
+  Default_Static_Dir* = "static"
+  Default_Header_Template* = "header.template"
+  Default_Footer_Template* = "footer.template"
 
-  Flag_Long_ServerPort* = "port"
-  Flag_Short_ServerPort* = "p"
+  # Configuration Key Strings
+  Conf_Key_Section_Jester* = "jester"
+  Conf_Key_Jester_Port* = "port"
 
-  Flag_Long_ListTags* ="list-tags"
+  Conf_Key_Section_Content* = "content"
+  Conf_Key_Content_Source* = "source"
+  Conf_Key_Content_Cache* = "cache"
+  Conf_Key_Content_Static* = "static"
 
-  Flag_Long_Verbosity* = "verbosity"
-  Flag_Short_Verbosity* = "v"
+  Conf_Key_Section_Template* = "template"
+  Conf_Key_Template_Header* = "header"
+  Conf_Key_Template_Footer* = "footer"
+
+  Conf_Key_Section_Render* = "render"
+
+  # File Extensions
+  FileExt_Rst* = "rst"
+  FileExt_Yaml* = "yaml"
+  FileExt_Html* = "html"
+
+  # Application Constants
+  Path_Index_Html* = "index.html"

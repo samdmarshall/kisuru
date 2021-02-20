@@ -3,76 +3,49 @@
 # Imports
 # =======
 
-import uri
-import logging
-import sequtils
-import strutils
-import parseutils
+import times
+import nativesockets
 
+# =======
+# Exports
+# =======
+
+export Port
 
 # =====
 # Types
 # =====
 
 type
-  VerbosityLevel* {.pure.} = enum
-    Debug,
-    Info,
-    Notice,
-    Warn,
-    Error,
-    Fatal,
-    None
+  Configuration* = object
+    # Section: jester
+    jesterPort*: Port
 
-  Tag* = object
-    id*: int64
-    name*: string
+    # Section: content
+    sourcePath*: string
+    cachePath*: string
+    staticPath*: string
 
-  Bookmark* = object
-    id*: int64
-    name*: string
-    url*: Uri
-    tags*: seq[Tag]
+    # Section: template
+    headerTemplate*: string
+    footerTemplate*: string
 
-  Fields* {.pure.} = enum
-    Name,
-    Tag,
-    Url
+  PageKind* = enum
+    pkUnknown,
+    pkSource,
+    pkStatic
 
-# =========
-# Functions
-# =========
+  PagePath* = tuple[content, metadata: string]
 
-proc `@`*(lvl: VerbosityLevel): Level =
-  case lvl
-  of Debug:
-    result = lvlDebug
-  of Info:
-    result = lvlInfo
-  of Notice:
-    result = lvlNotice
-  of Warn:
-    result = lvlWarn
-  of Error:
-    result = lvlError
-  of Fatal:
-    result = lvlFatal
-  of None:
-    result = lvlNone
-
-proc newTag*(id: string, name: string): Tag =
-  var identifier: int
-  discard parseInt(id, identifier)
-  result.id = identifier
-  result.name = name
-
-proc join*(items: seq[Tag], sep: string): string =
-  result = items.mapIt(it.name).join(sep)
-
-proc newBookmark*(id: string, name: string, url: string): Bookmark =
-  var identifier: int
-  discard parseInt(id, identifier)
-  result.id = identifier
-  result.name = name
-  result.url = parseUri(url)
-  result.tags = newSeq[Tag]()
+  Page* = ref PageObj
+  PageObj = object
+    requestPath*: string
+    lastModTime*: Time
+    case kind*: PageKind
+    of pkSource:
+      sourcePath*: PagePath
+      cachePath*: string
+    of pkStatic:
+      staticPath*: string
+    of pkUnknown:
+      discard
