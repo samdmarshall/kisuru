@@ -6,14 +6,15 @@
 import os
 import json
 import times
+import options
 import streams
 import strtabs
-import sequtils
+# import sequtils
 import strutils
 import strformat
 
-import packages.docutils.rst
-import packages.docutils.rstgen
+import packages/docutils/rst
+import packages/docutils/rstgen
 
 # Third Party Package Imports
 import yaml
@@ -23,6 +24,20 @@ import jester
 import "models.nim"
 import "defaults.nim"
 #import kisurupkg/[ models ]
+
+# Types
+
+type
+  PageMetadata* = object
+    # rss fields
+    title*: string
+    summary*: string
+    date*: string
+    # private fields, use methods for these
+    published: bool
+    root: Option[bool]
+    disableheader: Option[bool]
+    disablefooter: Option[bool]
 
 # ================
 # PagePath Methods
@@ -51,6 +66,35 @@ proc getLastModificationTime*(path: PagePath): Time =
   else:
     result = content_mod_time
 
+# ====================
+# PageMetadata Methods
+# ====================
+
+proc initMetadata*(data: JsonNode): PageMetadata =
+  result.disableheader = some(false)
+  result.disablefooter = some(false)
+  result.root = none(bool)
+  result.published = false
+  result = data.to(PageMetadata)
+
+proc isPublished*(metadata: PageMetadata): bool =
+  return metadata.published
+
+proc isHeaderDisabled*(metadata: PageMetadata): bool =
+  result = false
+  if metadata.disableheader.isSome():
+    result = metadata.disableheader.get()
+
+proc isFooterDisabled*(metadata: PageMetadata): bool =
+  result = false
+  if metadata.disablefooter.isSome():
+    result = metadata.disablefooter.get()
+
+proc isRoot*(metadata: PageMetadata): bool =
+  result = false
+  if metadata.root.isSome():
+    result = metadata.root.get()
+
 # ============
 # Page Methods
 # ============
@@ -71,6 +115,7 @@ proc isCacheOutdated*(page: Page, conf: Configuration): bool =
   if not is_cached:
     result =  true
   else:
+
     let source_mod_time = getLastModificationTime(page.sourcePath)
     if source_mod_time > page.lastModTime:
       result =  true
@@ -80,8 +125,7 @@ proc isCacheOutdated*(page: Page, conf: Configuration): bool =
 proc resolvePage*(conf: Configuration, request: Request): Page {.gcsafe.} =
   let static_path = conf.staticPath / request.path
   if fileExists(static_path):
-    result = Page(kind: pkStatic)
-    result.staticPath = static_path
+    result = Page(kind: pkStatic, staticPath: static_path)
   else:
     result = Page(kind: pkSource)
 
@@ -109,26 +153,41 @@ proc resolvePage*(conf: Configuration, request: Request): Page {.gcsafe.} =
 
   result.requestPath = request.path
 
+proc fetchMetadata*(page: Page): PageMetadata =
+  case page.kind
+  of pkSource:
+    try:
+      var metadata_stream = openFileStream(page.sourcePath.metadata)
+      let metadata_json = loadToJson(metadata_stream)
+      metadata_stream.close()
+      result = initMetadata(metadata_json[0])
+    finally:
+      discard
+  else:
+    discard
 
-proc generate*(page: Page): string =
+proc generate*(page: Page, metadata: PageMetadata): string {.gcsafe.} =
   echo fmt"generating page contents for request: {page.requestPath}"
-  var content_stream = newFileStream(page.sourcePath.content)
-  let content = content_stream.readAll()
-  content_stream.close()
 
-  var metadata_stream = newFileStream(page.sourcePath.metadata)
-  let metatdata = loadToJson(metadata_stream)
-  metadata_stream.close()
+  var content: string
+  try:
+    var content_stream = openFileStream(page.sourcePath.content)
+    content = content_stream.readAll()
+    content_stream.close()
+  finally:
+    result = ""
 
+  var generated_html: string
   var generator: RstGenerator
-  generator.initRstGenerator(outHtml, defaultConfig(), page.sourcePath.content, {})
-  var has_toc = false
-  let rst_data = rstParse(content, page.sourcePath.content, 1, 1, has_toc, {})
-
-  var generated_html = ""
-  {.cast(gcsafe).}:
-    generator.renderRstToOut(rst_data, generated_html)
-    result = deepCopy(generated_html)
+  try:
+    generator.initRstGenerator(outHtml, defaultConfig(), page.sourcePath.content, {})
+    var has_toc = false
+    let rst_data = rstParse(content, page.sourcePath.content, 1, 1, has_toc, {})
+    {.cast(gcsafe).}:
+      generator.renderRstToOut(rst_data, generated_html)
+      result = deepCopy(generated_html)
+  finally:
+    generated_html = """<html><head><title>error!</title></head><body><div>failed to render page!</div></body></html>"""
 
 proc updateCache*(page: Page, contents: string): bool =
   result = false

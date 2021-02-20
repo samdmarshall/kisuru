@@ -10,7 +10,7 @@ import jester
 import commandeer
 
 # Package Imports
-import kisurupkg/[ models, defaults, configuration, page ]
+import kisurupkg/[ models, defaults, configuration, page, templates ]
 
 # ===========
 # Entry Point
@@ -40,7 +40,7 @@ proc main() =
 
         let should_update_cache = (not is_cached) or (is_cached and is_outdated)
         if should_update_cache:
-          let page_contents = page.generate()
+          let page_contents = conf.renderTemplate(page)
           let successful_cache = page.updateCache(page_contents)
           resp page_contents
         else:

@@ -18,6 +18,7 @@ requires "commandeer"
 requires "parsetoml"
 requires "yaml"
 requires "uuids"
+requires "nimjson"
 
 requires "taskqueue"
 
