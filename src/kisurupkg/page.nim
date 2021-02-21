@@ -4,7 +4,6 @@
 
 # Standard Library Imports
 import os
-import uri
 import json
 import times
 import options
@@ -60,6 +59,7 @@ iterator walkPagePattern*(pattern: string): PagePath =
       yield (content, metadata)
 
 proc getLastModificationTime*(path: PagePath): Time =
+  echo path
   let content_mod_time = getLastModificationTime(path.content)
   let metadata_mod_time = getLastModificationTime(path.metadata)
   if content_mod_time > metadata_mod_time:
@@ -112,6 +112,15 @@ proc toDate*(date: Option[string]): DateTime =
 # Page Methods
 # ============
 
+proc `$`*(page: Page): string =
+  case page.kind
+  of pkSource:
+    result = fmt"Page(requestPath: {page.requestPath}, kind: {page.kind}, lastModTime: {page.lastModTime}, sourcePath: {page.sourcePath}, cachePath: {page.cachePath})"
+  of pkStatic:
+    result = fmt"Page(requestPath: {page.requestPath}, kind: {page.kind}, lastModTime: {page.lastModTime}, staticPath: {page.staticPath})"
+  else:
+    result = fmt"Page(requestPage: {page.requestPath}, kind: {page.kind})"
+
 proc isCached*(page: Page, conf: Configuration): bool =
   case page.kind
   of pkSource:
@@ -135,27 +144,33 @@ proc isCacheOutdated*(page: Page, conf: Configuration): bool =
     else:
       result =  false
 
-proc expandPageUrl*(page: Page, conf: Configuration): Uri =
-  let base = parseUri($conf.baseUrl)
-  let path = parseUri(page.requestPath)
-  result = base.combine(path)
+proc expandPageUrl*(page: Page, conf: Configuration): string =
+  let relative_path = relativePath(page.requestPath, conf.sourcePath)
+  result = fmt"{conf.baseUrl}/{relative_path}"
 
 proc resolvePage*(conf: Configuration, path: string): Page {.gcsafe.} =
+  result = Page()
   let static_path = conf.staticPath / path
   if fileExists(static_path):
-    result = Page(kind: pkStatic, staticPath: static_path)
+    result.kind = pkStatic # Page(kind: pkStatic, staticPath: static_path)
+    result.staticPath = static_path
   else:
-    result = Page(kind: pkSource)
+    result.kind = pkSource # Page(kind: pkSource)
 
     let path_no_ext = changeFileExt(path, "")
     echo fmt"searching for page at path: {path_no_ext}"
-    let pattern = conf.sourcePath / path_no_ext & ".*"
+    let pattern = path_no_ext & ".*"
+    echo $pattern
     for source in walkPagePattern(pattern):
-      let found_path = relativePath(changeFileExt(source.content, ""), conf.sourcePath)
-      echo fmt"found: {found_path}"
-      if cmpPaths(relativePath(path_no_ext, "/"), found_path) == 0:
+      echo fmt"source: {source.content}"
+      let found_path = changeFileExt(source.content, "") #relativePath(, conf.sourcePath)
+      echo fmt"found: {found_path} | {path_no_ext}"
+      if cmpPaths(path_no_ext, found_path) == 0:
         result.sourcePath = source
-        result.cachePath = conf.cachePath / path
+        let relative_path = relativePath(path, conf.sourcePath)
+        result.cachePath = conf.cachePath / relative_path
+        if result.cachePath.endsWith(".rst"):
+          result.cachePath = changeFileExt(result.cachePath, "html")
         break
 
   case result.kind
@@ -170,6 +185,8 @@ proc resolvePage*(conf: Configuration, path: string): Page {.gcsafe.} =
     discard
 
   result.requestPath = path
+  if path.endsWith("rst"):
+    result.requestPath = changeFileExt(path, "html")
 
 proc resolvePage*(conf: Configuration, request: Request): Page {.gcsafe.} =
   result = conf.resolvePage(request.path)

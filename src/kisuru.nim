@@ -10,7 +10,7 @@ import jester
 import commandeer
 
 # Package Imports
-import kisurupkg/[ models, defaults, configuration, page, templates ]
+import kisurupkg/[ models, defaults, configuration, page, templates, rss ]
 
 # ===========
 # Entry Point
@@ -24,6 +24,9 @@ proc main() =
     exitoption Flag_Long_Version, Flag_Short_Version, fmt"{NimblePkgName} v{NimblePkgVersion}"
 
   let conf = initConfiguration(SitemapFile)
+
+  let rss = conf.generateRssFeed()
+  echo $rss
 
   router legacy:
     discard

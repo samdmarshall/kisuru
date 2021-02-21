@@ -4,7 +4,6 @@
 # =======
 
 # Standard Library Imports
-import uri
 import times
 import nativesockets
 
@@ -39,7 +38,7 @@ type
 
     # Section: rss
     scanDirForRssFeed*: string
-    baseUrl*: Uri
+    baseUrl*: string
 
   PageKind* = enum
     pkUnknown,
@@ -52,12 +51,12 @@ type
   PageObj = object
     requestPath*: string
     lastModTime*: Time
-    case kind*: PageKind
-    of pkSource:
-      sourcePath*: PagePath
-      cachePath*: string
-    of pkStatic:
-      staticPath*: string
-    of pkUnknown:
-      discard
+    kind*: PageKind
+    # of pkSource:
+    sourcePath*: PagePath
+    cachePath*: string
+    # of pkStatic:
+    staticPath*: string
+    # of pkUnknown:
+      # discard
 

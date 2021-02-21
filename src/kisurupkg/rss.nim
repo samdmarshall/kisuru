@@ -4,14 +4,19 @@
 # =======
 
 # Standard Library Imports
+import os
+import times
+import options
 import strtabs
 import xmltree
 import algorithm
+import strformat
 
 # Third Party Package Imports
 
 # Package Imports
 import "defaults.nim"
+import "models.nim"
 import "page.nim"
 
 # =========
@@ -57,11 +62,12 @@ proc generateRssItem(conf: Configuration, page: Page): XmlNode =
   let title = <>title(title_node)
   result.add(title)
 
-  let description_node = newText(metadata.summary)
+  let description_node = newText(metadata.summary.get())
   let description = <>description(description_node)
   result.add(description)
 
-  let link_node = newText(page.expandPageUrl(conf))
+  let link_url = page.expandPageUrl(conf)
+  let link_node = newText(fmt"{link_url}")
   let link = <>link(link_node)
   result.add(link)
 
@@ -78,13 +84,16 @@ proc generateRssFeedBody(conf: Configuration, pages: seq[Page]): XmlNode =
 
   for page in pages:
     let item = conf.generateRssItem(page)
+    # echo $item
     channel.add(item)
 
 
-proc generateRssFeed(conf: Configuration): string =
-  var pages = conf.findPagesAtPath(conf.scanDirForRssFeed)
+proc generateRssFeed*(conf: Configuration): string =
+  echo conf.scanDirForRssFeed / "*"
+  var pages = conf.findPagesAtPath(conf.scanDirForRssFeed / "*")
+  echo $pages
   pages.sort(postDateCompare, SortOrder.Descending)
 
   let body = conf.generateRssFeedBody(pages)
 
-  result = fmt"{xmlHeader}{body}"
+  result = fmt"{xmlHeader}{$body}"
