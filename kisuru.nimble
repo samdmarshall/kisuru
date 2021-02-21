@@ -1,3 +1,5 @@
+import distros
+
 # Package
 
 version       = "0.1.0"
@@ -18,18 +20,16 @@ requires "commandeer"
 requires "parsetoml"
 requires "yaml"
 requires "uuids"
-requires "nimjson"
+requires "gnutls"
 
+requires "schedules"
 requires "taskqueue"
+
+foreignDep "openssl"
+foreignDep "nginx"
+foreignDep "gnutls"
 
 # Tasks
 
 task exec, "build and run the executable":
   exec "nimble run -- ./content/pewpewthespells.toml"
-
-task clean, "Remove Build Artifacts":
-  withDir projectDir():
-    rmDir binDir
-  rmDir nimcacheDir()
-
-

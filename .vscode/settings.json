@@ -1,5 +1,6 @@
 {
   "python.pythonPath": "/brew/bin/python3",
   "workbench.tree.indent": 18,
-  "restructuredtext.confPath": "${workspaceFolder}"
+  "restructuredtext.confPath": "${workspaceFolder}",
+  "restructuredtext.languageServer.disabled": true
 }

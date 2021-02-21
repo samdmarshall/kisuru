@@ -4,13 +4,11 @@
 # =======
 
 # Standard Library Imports
-import json
+import uri
 import times
-import options
 import nativesockets
 
 # Third Party Package Imports
-import nimjson
 
 # Package Imports
 
@@ -38,6 +36,10 @@ type
     # Section: template
     headerTemplate*: string
     footerTemplate*: string
+
+    # Section: rss
+    scanDirForRssFeed*: string
+    baseUrl*: Uri
 
   PageKind* = enum
     pkUnknown,

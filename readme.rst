@@ -28,6 +28,9 @@ the application is configured by a toml (``.toml``) file that is passed directly
 
   [render]
 
+  [rss]
+  directory = "blog/" # Defaults to "blog/", path relative to `content.source`
+
 
 
 configuration - jester
@@ -98,11 +101,11 @@ page metadata definition
 these are the defined keys for page metadata:
 
 .. code-block:: yaml
-  root: [ yes | no ]
-  published: [ yes | no ]
-  date: MMMM DD, YYYY
-  title: <#title of page#>
-  summary: <#description of page#>
-  disablefooter: [ yes | no ]
-  disableheader: [ yes | no ]
+  root: option[boolean]
+  published: boolean
+  date: option[string] # in format: MMMM dd, YYYY
+  title: string
+  summary: option[string]
+  disablefooter: option[boolean]
+  disableheader: option[boolean]
 

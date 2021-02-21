@@ -12,5 +12,7 @@ header = "header.template"     # Defaults to "./header.template"
 footer = "footer.template"     # Defaults to "./footer.template"
 
 [render]
-html = "html.template"
-plaintext = "plaintext.template"
+
+[rss]
+directory = "blog/"
+baseurl = "https://pewpewthespells.com"

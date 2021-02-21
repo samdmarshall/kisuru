@@ -4,6 +4,7 @@
 
 # Standard Library Imports
 import os
+import uri
 import json
 import times
 import options
@@ -25,14 +26,16 @@ import "models.nim"
 import "defaults.nim"
 #import kisurupkg/[ models ]
 
+# =====
 # Types
+# =====
 
 type
   PageMetadata* = object
     # rss fields
     title*: string
-    summary*: string
-    date*: string
+    summary*: Option[string]
+    date*: Option[string]
     # private fields, use methods for these
     published: bool
     root: Option[bool]
@@ -71,6 +74,8 @@ proc getLastModificationTime*(path: PagePath): Time =
 # ====================
 
 proc initMetadata*(data: JsonNode): PageMetadata =
+  result.date = some(now().format("MMMM dd, yyyy"))
+  result.summary = some("website page")
   result.disableheader = some(false)
   result.disablefooter = some(false)
   result.root = none(bool)
@@ -94,6 +99,14 @@ proc isRoot*(metadata: PageMetadata): bool =
   result = false
   if metadata.root.isSome():
     result = metadata.root.get()
+
+proc toDate*(date: string): DateTime =
+  result = parse(date, "MMMM d, YYYY")
+
+proc toDate*(date: Option[string]): DateTime =
+  if date.isSome():
+    let date_string = date.get()
+    result = date_string.toDate()
 
 # ============
 # Page Methods
@@ -122,14 +135,19 @@ proc isCacheOutdated*(page: Page, conf: Configuration): bool =
     else:
       result =  false
 
-proc resolvePage*(conf: Configuration, request: Request): Page {.gcsafe.} =
-  let static_path = conf.staticPath / request.path
+proc expandPageUrl*(page: Page, conf: Configuration): Uri =
+  let base = parseUri($conf.baseUrl)
+  let path = parseUri(page.requestPath)
+  result = base.combine(path)
+
+proc resolvePage*(conf: Configuration, path: string): Page {.gcsafe.} =
+  let static_path = conf.staticPath / path
   if fileExists(static_path):
     result = Page(kind: pkStatic, staticPath: static_path)
   else:
     result = Page(kind: pkSource)
 
-    let path_no_ext = changeFileExt(request.path, "")
+    let path_no_ext = changeFileExt(path, "")
     echo fmt"searching for page at path: {path_no_ext}"
     let pattern = conf.sourcePath / path_no_ext & ".*"
     for source in walkPagePattern(pattern):
@@ -137,7 +155,7 @@ proc resolvePage*(conf: Configuration, request: Request): Page {.gcsafe.} =
       echo fmt"found: {found_path}"
       if cmpPaths(relativePath(path_no_ext, "/"), found_path) == 0:
         result.sourcePath = source
-        result.cachePath = conf.cachePath / request.path
+        result.cachePath = conf.cachePath / path
         break
 
   case result.kind
@@ -151,7 +169,15 @@ proc resolvePage*(conf: Configuration, request: Request): Page {.gcsafe.} =
   else:
     discard
 
-  result.requestPath = request.path
+  result.requestPath = path
+
+proc resolvePage*(conf: Configuration, request: Request): Page {.gcsafe.} =
+  result = conf.resolvePage(request.path)
+
+proc findPagesAtPath*(conf: Configuration, path: string): seq[Page] {.gcsafe.} =
+  for (content, metadata) in walkPagePattern(path):
+    let page = conf.resolvePage(content)
+    result.add page
 
 proc fetchMetadata*(page: Page): PageMetadata =
   case page.kind

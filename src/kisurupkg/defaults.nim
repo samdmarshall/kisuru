@@ -18,6 +18,8 @@ const
   Default_Static_Dir* = "static"
   Default_Header_Template* = "header.template"
   Default_Footer_Template* = "footer.template"
+  Default_Rss_Directory* = "blog"
+  Default_Rss_BaseUrl* = "http://example.com"
 
   # Configuration Key Strings
   Conf_Key_Section_Jester* = "jester"
@@ -33,6 +35,10 @@ const
   Conf_Key_Template_Footer* = "footer"
 
   Conf_Key_Section_Render* = "render"
+
+  Conf_Key_Section_Rss* = "rss"
+  Conf_Key_Rss_Directory* = "directory"
+  Conf_Key_Rss_BaseUrl* = "baseurl"
 
   # File Extensions
   FileExt_Rst* = "rst"

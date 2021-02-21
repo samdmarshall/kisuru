@@ -4,6 +4,7 @@
 
 # Standard Library Imports
 import os
+import uri
 
 # Third Party Package Imports
 import parsetoml
@@ -27,6 +28,8 @@ proc defaultConfiguration*(path: string): Configuration =
   result.staticPath = root / Default_Static_Dir
   result.headerTemplate = Default_Header_Template
   result.footerTemplate = Default_Footer_Template
+  result.scanDirForRssFeed = result.sourcePath / Default_Rss_Directory
+  result.baseUrl = parseUri(Default_Rss_BaseUrl)
 
 proc initConfiguration*(path: string): Configuration =
   result = defaultConfiguration(path)
@@ -74,3 +77,13 @@ proc initConfiguration*(path: string): Configuration =
     if data.hasKey(Conf_Key_Section_Render):
       let render_settings = data.getOrDefault(Conf_Key_Section_Render)
 
+    if data.hasKey(Conf_Key_Section_Rss):
+      let rss_settings = data.getOrDefault(Conf_Key_Section_Rss)
+
+      if rss_settings.hasKey(Conf_Key_Rss_Directory):
+        let rss_scan_directory = rss_settings.getOrDefault(Conf_Key_Rss_Directory)
+        result.scanDirForRssFeed = rss_scan_directory.getStr(Default_Rss_Directory)
+
+      if rss_settings.hasKey(Conf_Key_Rss_BaseUrl):
+        let rss_base_url = rss_settings.getOrDefault(Conf_Key_Rss_BaseUrl)
+        result.baseUrl = parseUri(rss_base_url.getStr(Default_Rss_BaseUrl))
