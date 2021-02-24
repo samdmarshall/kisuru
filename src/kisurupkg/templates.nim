@@ -12,13 +12,14 @@ import strformat
 
 # Package Imports
 import "models.nim"
-import "page.nim"
+import "webpage.nim"
+import "page/metadata.nim"
 
 # =========
 # Functions
 # =========
 
-proc renderTemplate*(configuration: Configuration, page: Page): string =
+proc renderTemplate*(page: Webpage): string =
   let metadata = page.fetchMetadata()
 
   let published_warning =

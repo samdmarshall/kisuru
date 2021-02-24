@@ -10,7 +10,7 @@ import jester
 import commandeer
 
 # Package Imports
-import kisurupkg/[ models, defaults, configuration, page, templates, rss ]
+import kisurupkg/[ models, defaults, configuration, webpage, templates ]
 
 # ===========
 # Entry Point
@@ -25,8 +25,8 @@ proc main() =
 
   let conf = initConfiguration(SitemapFile)
 
-  let rss = conf.generateRssFeed()
-  echo $rss
+  # let rss = conf.generateRssFeed()
+  # echo $rss
 
   router legacy:
     discard
@@ -35,24 +35,41 @@ proc main() =
     extend legacy, ""
 
     get "/@path?.?@ext?":
-      var page = conf.resolvePage(request)
+      var page = conf.resolvePath(request)
       case page.kind
-      of pkSource:
-        let is_cached = page.isCached(conf)
-        let is_outdated = page.isCacheOutdated(conf)
+      of wpDynamic:
+        let is_cached = page.isCached()
+        let is_outdated = page.isCacheOutdated()
 
         let should_update_cache = (not is_cached) or (is_cached and is_outdated)
         if should_update_cache:
-          let page_contents = conf.renderTemplate(page)
+          let page_contents = page.renderTemplate()
           let successful_cache = page.updateCache(page_contents)
           resp page_contents
         else:
-          sendFile(page.cachePath)
-
-      of pkStatic:
-        sendFile(page.staticPath)
+          sendFile($page.cachePath)
+      of wpStatic:
+        sendFile($page.staticPath)
       else:
-        halt()
+        resp(Http404)
+      # var page = conf.resolvePage(request)
+      # case page.kind
+      # of pkSource:
+      #   let is_cached = page.isCached(conf)
+      #   let is_outdated = page.isCacheOutdated(conf)
+
+      #   let should_update_cache = (not is_cached) or (is_cached and is_outdated)
+      #   if should_update_cache:
+      #     let page_contents = conf.renderTemplate(page)
+      #     let successful_cache = page.updateCache(page_contents)
+      #     resp page_contents
+      #   else:
+      #     sendFile(page.cachePath)
+
+      # of pkStatic:
+      #   sendFile(page.staticPath)
+      # else:
+      #   halt()
 
   var config = newSettings(port = conf.jesterPort)
   var website = initJester(pewpewthespells, settings=config)

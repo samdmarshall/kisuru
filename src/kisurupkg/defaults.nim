@@ -1,4 +1,15 @@
 
+# =======
+# Imports
+# =======
+
+# Standard Library Imports
+import os
+
+# =========
+# Constants
+# =========
+
 const
   # Defines from Nimble
   NimblePkgName* {.strdefine.} = ""
@@ -46,4 +57,5 @@ const
   FileExt_Html* = "html"
 
   # Application Constants
-  Path_Index_Html* = "index.html"
+  IndexPageName* = "index"
+  Path_Index_Html* = IndexPageName & ExtSep & FileExt_Html

@@ -17,7 +17,7 @@ import strformat
 # Package Imports
 import "defaults.nim"
 import "models.nim"
-import "page.nim"
+import "path.nim"
 
 # =========
 # Constants
@@ -52,7 +52,7 @@ proc postDateCompare(a: Page, b: Page): int =
     result = 1
 
 proc generateRssItem(conf: Configuration, page: Page): XmlNode =
-  let metadata = page.fetchMetadata()
+  let metadata = conf.fetchMetadata(page)
 
   # check to see if the post is valid for creating an entry
 

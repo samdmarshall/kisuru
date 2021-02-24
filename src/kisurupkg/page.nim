@@ -51,7 +51,7 @@ iterator walkPagePattern*(pattern: string): PagePath =
     let valid_content = (content.endsWith(ExtSep & FileExt_Rst))
 
     let metadata = path & ExtSep & FileExt_Yaml
-    let valid_metadata = (metadata.endsWith(ExtSep & FileExt_Rst & ExtSep & FileExt_Yaml))
+    let valid_metadata = (metadata.endsWith(ExtSep & FileExt_Yaml))
 
     let pair_exists = (fileExists(content) and fileExists(metadata))
     if pair_exists and (valid_content and valid_metadata):
