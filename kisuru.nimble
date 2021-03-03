@@ -18,7 +18,7 @@ requires "nim >= 1.4.2"
 requires "jester >= 0.5.0"
 requires "commandeer"
 requires "parsetoml"
-requires "yaml"
+requires "yaml@#head"
 requires "uuids"
 requires "gnutls"
 
