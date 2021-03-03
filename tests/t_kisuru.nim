@@ -14,8 +14,6 @@ import parseutils
 import kisurupkg/[ defaults ]
 
 
-import pathname
-
 const
   MetadataSep = "---"
 
