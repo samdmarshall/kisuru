@@ -9,8 +9,10 @@ jobs:
     name: Build Project
     runs-on: ubuntu-latest
     steps:
-      - uses: nimlang/nim@1.4.2-ubuntu-regular
       - uses: actions/checkout@v2
+      - uses: jiro4989/setup-nim-action@v1
+        with:
+          nim-version: '1.4.2'
       - name: Build
         run: nimble build --accept
         # env:
@@ -19,8 +21,10 @@ jobs:
     name: Test Project
     runs-on: ubuntu-latest
     steps:
-      - uses: nimlang/nim@1.4.2-ubuntu-regular
       - uses: actions/checkout@v2
+      - uses: jiro4989/setup-nim-action@v1
+        with:
+          nim-version: '1.4.2'
       - name: Test Project
         run: nimble test --accept
         # env:
