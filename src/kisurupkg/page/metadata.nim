@@ -8,20 +8,15 @@ import os
 import json
 import times
 import options
+import streams
 
 # Third Party Package Imports
 import yaml
-import jester
 
 # Package Imports
 import "../models.nim"
 import "../defaults.nim"
 # import kisurupkg/[ models, defaults ]
-
-# =====
-# Types
-# =====
-
 
 # ====================
 # PageMetadata Methods
@@ -35,6 +30,15 @@ proc initMetadata*(data: JsonNode): PageMetadata =
   result.root = none(bool)
   result.published = false
   result = data.to(PageMetadata)
+
+proc initMetadata*(filepath: string): PageMetadata =
+  try:
+    var metadata_stream = openFileStream(filepath)
+    let metadata_json = loadToJson(metadata_stream)
+    metadata_stream.close()
+    result = initMetadata(metadata_json[0])
+  finally:
+    discard
 
 proc isPublished*(metadata: PageMetadata): bool =
   return metadata.published

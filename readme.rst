@@ -80,18 +80,18 @@ this is an outline of the expected steps in requesting to view a page from the w
     query: /foo/bar
     extension: html
 3. look up file
-  1. check cache -> <cache>/foo/bar.html
-    1. exists in cache, check if outdated file against source (last modified dates)
-    2. render page from cache, if cache is newer
-    3. render page from source, if source is newer
-      1. save new render of page to cache
+   1. check cache -> <cache>/foo/bar.html
+      1. exists in cache, check if outdated file against source (last modified dates)
+      2. render page from cache, if cache is newer
+      3. render page from source, if source is newer
+         1. save new render of page to cache
   2. check source -> <source>/foo/bar.*
-    1. find page files for query (``/foo/bar.rst``, ``/foo/bar.rst.yaml``)
-    2. parse content and metadata files
-      1. decide if they should be rendered
-      2. render page
-      3. save page to cache
-    3. display newly cached content
+     1. find page files for query (``/foo/bar.rst``, ``/foo/bar.rst.yaml``)
+     2. parse content and metadata files
+        1. decide if they should be rendered
+        2. render page
+        3. save page to cache
+     3. display newly cached content
   3. file is part of static content
 
 

@@ -17,13 +17,13 @@ import packages/docutils/rst
 import packages/docutils/rstgen
 
 # Third Party Package Imports
-import yaml
 import jester
 
 # Package Imports
 import "models.nim"
 import "defaults.nim"
 import "page/metadata.nim"
+import "page/filepath.nim"
 #import kisurupkg/[ models, defaults ]
 #import kisurupkg/page/[ metadata ]
 
@@ -31,133 +31,10 @@ import "page/metadata.nim"
 # Functions
 # =========
 
-# =================
-# Utility Functions
-# =================
-
-proc normExt(ext: string): string =
-  #[
-    For: ".rst" -> "rst"
-
-    For: "rst" -> "rst"
-  ]#
-  let origin = ext.low
-  let last = ext.high
-  let offset = ext.find(ExtSep, origin, last)
-  let skip = offset + origin
-  if skip == 0:
-    let start = skip + 1
-    result = ext[start..last]
-  else:
-    result = ext
-
-proc dot*(name: string, ext: string): string =
-  result = name
-  if name.len > 0:
-    result = name & ExtSep & ext
-
-# ==================
-# FilePath Functions
-# ==================
-
-proc initFilePath*(filepath: string, origin: Option[string] = none(string)): FilePath =
-  var (dir, name, ext) = filepath.splitFile()
-  if origin.isSome():
-    let origin_value = origin.get()
-    if origin_value.len > 0 and dir.isRelativeTo(origin_value):
-      dir = "/" / dir.relativePath(origin_value)
-  dir.normalizePathEnd(true)
-  debug("initializing FilePath:" & fmt"""
-
-  origin: {origin}
-  directory: {dir}
-  filename: {name}
-  extensions: {normExt(ext)}""")
-  result = FilePath(origin: origin, directory: dir, filename: name, extensions: @[normExt(ext)])
-
-proc base*(path: FilePath): string =
-  result = "/" / path.directory / path.filename
-  if path.origin.isSome():
-    let origin_value = path.origin.get()
-    if origin_value.len > 0:
-      result = path.origin.get() / result
-
-proc `$`*(path: FilePath): string =
-  result = path.base().dot(path.extensions.join("|"))
-
-proc `===`*(a, b: FilePath): bool =
-  warn("comparing filepaths using ===")
-  var origins_match = true
-  # let have_origins = (a.origin.isSome() and b.origin.isSome())
-  # let lack_origins = (a.origin.isNone() and b.origin.isNone())
-  # if have_origins:
-  #   origins_match = a.origin.get() == a.origin.get()
-  # else:
-  #   if not lack_origins:
-  #     origins_match = false
-  # let a_dir = normalizePathEnd(a.directory)
-  # let b_dir = normalizePathEnd(b.directory)
-  let dirs_match = normalizedPath(a.directory) == normalizedPath(b.directory)
-  warn(fmt"a.filename: {a.filename}")
-  warn(fmt"b.filename: {b.filename}")
-  let names_match = a.filename == b.filename
-  let exts_match = a.extensions == b.extensions
-  info(fmt"`===`.result = {dirs_match} | {names_match} | {exts_match}")
-  result = origins_match and dirs_match and names_match and exts_match
-
-proc cmpDir*(a, b: string): bool =
-  let a_is_root = isRootDir(a)
-  let b_is_root = isRootDir(b)
-  if a_is_root and b_is_root:
-    return true
-  else:
-    let a_dirs = toSeq(parentDirs(a, fromRoot=true))
-    let b_dirs = toSeq(parentDirs(b, fromRoot=true))
-    return a_dirs == b_dirs
-    # let norm_a = normali
-
-proc `==`*(a, b: FilePath): bool =
-  warn("comparing filepaths using ==")
-  var origins_match = true
-  # debug(fmt"{a} ?? {b}")
-  # let have_origins = (a.origin.isSome() and b.origin.isSome())
-  # let lack_origins = (a.origin.isNone() and b.origin.isNone())
-  # if have_origins:
-  #   debug(fmt"a.origin: '{a.origin.get()}'")
-  #   debug(fmt"b.origin: '{b.origin.get()}'")
-  #   origins_match = a.origin.get() == b.origin.get()
-  # else:
-  #   if not lack_origins:
-  #     origins_match = false
-  let dirs_match = normalizedPath(a.directory) == normalizedPath(b.directory)
-  let names_match = a.filename == b.filename
-  info(fmt"`==`.result = {dirs_match} | {names_match}")
-  result = origins_match and dirs_match and names_match
-
-iterator filePaths*(path: FilePath): string =
-  for ext in path.extensions:
-    yield path.base().dot(ext)
-
-proc getMetadataPath*(path: FilePath): string =
-  if path.extensions.contains(FileExt_Yaml):
-    result = path.base().dot(FileExt_Yaml)
-
-proc getContentPath*(path: FilePath): string =
-  if path.extensions.contains(FileExt_Rst):
-    result = path.base().dot(FileExt_Rst)
-
-proc getLastModificationTime*(path: FilePath): Time =
-  result = fromUnix(0)
-  for file in path.filePaths():
-    if fileExists(file):
-      let mod_time = file.getLastModificationTime()
-      if mod_time < result:
-        result = mod_time
-
 iterator searchOrigin*(path: FilePath, origin: Option[string] = none(string), useGlobExt: bool = false): FilePath =
   var pattern_base = $path
   if useGlobExt:
-    pattern_base = path.base().dot("*")
+    pattern_base = path.base(dropOrigin=true).dot("*")
 
   var pattern = pattern_base
   if origin.isSome():
@@ -239,6 +116,11 @@ proc expandWebpagePath*(conf: Configuration, strpath: string): string =
   else:
     result = strpath
 
+proc expandPageUrl*(conf: Configuration, page: Webpage): string =
+  # let relative_path = relativePath(page.path, conf.sourcePath)
+  result = fmt"{conf.baseUrl}/{page.path}"
+  notice(fmt"composing full url: {result} -> ({page})")
+
 proc resolvePath*(conf: Configuration, filepath: string): Webpage =
   let full_filepath = conf.expandWebpagePath(filepath)
   notice(fmt"requesting full path: {full_filepath}")
@@ -291,13 +173,7 @@ proc fetchMetadata*(page: Webpage): PageMetadata =
   case page.kind
   of wpDynamic:
     let metadata_path = page.sourcePath.getMetadataPath()
-    try:
-      var metadata_stream = openFileStream(metadata_path)
-      let metadata_json = loadToJson(metadata_stream)
-      metadata_stream.close()
-      result = initMetadata(metadata_json[0])
-    finally:
-      discard
+    result = initMetadata(metadata_path)
   else:
     discard
 

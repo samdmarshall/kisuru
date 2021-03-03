@@ -10,7 +10,8 @@ import jester
 import commandeer
 
 # Package Imports
-import kisurupkg/[ models, defaults, configuration, webpage, templates ]
+import kisurupkg/[ models, defaults, configuration, webpage, templates, rss ]
+import kisurupkg/page/[ filepath ]
 
 # ===========
 # Entry Point
@@ -25,8 +26,8 @@ proc main() =
 
   let conf = initConfiguration(SitemapFile)
 
-  # let rss = conf.generateRssFeed()
-  # echo $rss
+  let rss = conf.generateRssFeed()
+  echo $rss
 
   router legacy:
     discard
@@ -47,9 +48,11 @@ proc main() =
           let successful_cache = page.updateCache(page_contents)
           resp page_contents
         else:
-          sendFile($page.cachePath)
+          for filepath in page.cachePath.filePaths():
+            sendFile(filepath)
       of wpStatic:
-        sendFile($page.staticPath)
+        for filepath in page.staticPath.filePaths():
+          sendFile(filepath)
       else:
         resp(Http404)
       # var page = conf.resolvePage(request)
