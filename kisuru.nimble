@@ -31,5 +31,20 @@ foreignDep "gnutls"
 
 # Tasks
 
+import os
+import strutils
+
 task exec, "build and run the executable":
   exec "nimble run -- ./content/pewpewthespells.toml"
+
+task clean, "clean test artifacts":
+  for file in listFiles("tests/"):
+    let (dir, name, ext) = splitFile(file)
+    let is_test_file = name.startsWith("t_")
+    let is_source_file = (ext == ".nim")
+    let is_executable = extractFilename(file) == toExe(name)
+    if is_test_file and not is_source_file and is_executable:
+      echo "Removing: " & file
+      rmFile file
+
+

@@ -30,7 +30,7 @@ const
   Default_Header_Template* = "header.template"
   Default_Footer_Template* = "footer.template"
   Default_Rss_Directory* = "blog"
-  Default_Rss_BaseUrl* = "http://example.com"
+  Default_Rss_BaseUrl* = "https://example.com"
 
   # Configuration Key Strings
   Conf_Key_Section_Jester* = "jester"

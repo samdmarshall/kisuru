@@ -17,6 +17,7 @@ import nativesockets
 # =======
 
 export Port
+export nativesockets.`==`
 
 # =====
 # Types

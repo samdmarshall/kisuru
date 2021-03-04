@@ -1,0 +1,18 @@
+
+[jester]
+port = 8080     # Defaults to "5000"
+
+[content]
+source = "source-dir/"    # Defaults to "./public/"
+cache = "cache-dir/"      # Defaults to "./cache/"
+static = "static-dir/"    # Defaults to "./static/"
+
+[template]
+header = "header-template.txt"     # Defaults to "./header.template"
+footer = "footer-template.txt"     # Defaults to "./footer.template"
+
+[render]
+
+[rss]
+directory = "blog-dir/"
+baseurl = "https://example-website.com"

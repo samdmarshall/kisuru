@@ -13,6 +13,15 @@ import commandeer
 import kisurupkg/[ models, defaults, configuration, webpage, templates, rss ]
 import kisurupkg/page/[ filepath ]
 
+# =====
+# Types
+# =====
+
+type
+  CommandLineInput* = object
+    sitemapFile: string
+    flags: set[]
+
 # ===========
 # Entry Point
 # ===========

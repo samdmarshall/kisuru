@@ -1,28 +1,27 @@
-# This is just an example to get you started. You may wish to put all of your
-# tests into a single file, or separate them into multiple `test1`, `test2`
-# etc. files (better names are recommended, just make sure the name starts with
-# the letter 't').
-#
-# To run these tests, simply execute `nimble test`.
+
+# =======
+# Imports
+# =======
 
 import unittest
 
-import os
-import streams
-import parseutils
+# Standard Library Imports
 
+# Third Party Package Imports
+
+# Package Imports
 import kisurupkg/[ defaults ]
 
 
+# =====
+# Tests
+# =====
+
+#[
 const
   MetadataSep = "---"
 
-suite "paths":
-  test "compare":
-    discard
-
-
-suite "parsing":
+suite "Parsing":
   test "embedded-metadata":
     let path = getCurrentDir() / "tests" / "assets" / "test.rst"
 
@@ -35,22 +34,24 @@ suite "parsing":
       var start_token: string
       index = parseUntil(contents, start_token, MetadataSep)
       let start_index = index + len(MetadataSep)
-      echo start_index
-      echo start_token
-      echo "----------------------------------"
+      # echo start_index
+      # echo start_token
+      # echo "----------------------------------"
 
       var metadata_token: string
       index = parseUntil(contents, metadata_token, "---", start=start_index)
       let end_index = start_index + index
 
-      echo end_index
-      echo metadata_token
-      echo "----------------------------------"
+      # echo end_index
+      # echo metadata_token
+      # echo "----------------------------------"
 
       let body_index = start_index + (end_index + len(MetadataSep))
       let body = contents[body_index..contents.high]
 
-      echo body_index
-      echo body
+      # echo body_index
+      # echo body
     finally:
       content_stream.close()
+
+]#
