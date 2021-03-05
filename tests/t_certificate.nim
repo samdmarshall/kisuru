@@ -19,7 +19,7 @@ import kisurupkg/[ certificate ]
 # Constants
 # =========
 const
-  Test_Certificate_Path = parentDir(currentSourcePath()) / "assets" / "fullchain.pem"
+  Test_Certificate_Path = parentDir(currentSourcePath()) / "assets" / "example-cert.pem"
 
 # =====
 # Tests
@@ -29,28 +29,28 @@ const
 suite "Certificate":
 
   test "Split Value: Multiple":
-    let value = "C=US,O=Let's Encrypt,CN=R3"
+    let value = "C=JP,ST=Tokyo,L=Chuo-ku,O=Frank4DD,OU=WebCert Support,CN=Frank4DD Web CA,EMAIL=support@frank4dd.com"
     let values = splitValue(value)
 
-    let answer = ["C=US", "O=Let's Encrypt", "CN=R3"]
+    let answer = ["C=JP", "ST=Tokyo", "L=Chuo-ku", "O=Frank4DD", "OU=WebCert Support", "CN=Frank4DD Web CA", "EMAIL=support@frank4dd.com"]
 
     check:
       values == answer
 
   test "Split Value: Single":
-    let value = "CN=pewpewthespells.com"
+    let value = "CN=www.example.com"
     let values = splitValue(value)
 
-    let answer = ["CN=pewpewthespells.com"]
+    let answer = ["CN=www.example.com"]
 
     check:
       values == answer
 
   test "Parse Value: Multiple":
-    let value = "C=US,O=Let's Encrypt,CN=R3"
+    let value = "C=JP,ST=Tokyo,L=Chuo-ku,O=Frank4DD,OU=WebCert Support,CN=Frank4DD Web CA,EMAIL=support@frank4dd.com"
     let values = parseValue(value)
 
-    var answer = {"C": "US", "O": "Let's Encrypt", "CN": "R3"}.newStringTable
+    var answer = {"C": "JP", "ST": "Tokyo", "L": "Chuo-ku", "O": "Frank4DD", "OU": "WebCert Support", "CN": "Frank4DD Web CA", "EMAIL": "support@frank4dd.com"}.newStringTable
 
     let values_keys = toSeq(values.keys())
     let answer_keys = toSeq(answer.keys())
@@ -69,10 +69,10 @@ suite "Certificate":
           item == answer_value
 
   test "Parse Value: Single":
-    let value = "CN=pewpewthespells.com"
+    let value = "CN=www.example.com"
     let values = parseValue(value)
 
-    var answer = {"CN": "pewpewthespells.com"}.newStringTable
+    var answer = {"CN": "www.example.com"}.newStringTable
 
     let values_keys = toSeq(values.keys())
     let answer_keys = toSeq(answer.keys())
@@ -94,7 +94,7 @@ suite "Certificate":
     let certificate = loadCertificate(Test_Certificate_Path)
     let issuer = certificate.getIssuer()
 
-    let answer = "C=US,O=Let's Encrypt,CN=R3"
+    let answer = "C=JP,ST=Tokyo,L=Chuo-ku,O=Frank4DD,OU=WebCert Support,CN=Frank4DD Web CA,EMAIL=support@frank4dd.com"
 
     check:
       issuer == answer
@@ -103,7 +103,7 @@ suite "Certificate":
     let certificate = loadCertificate(Test_Certificate_Path)
     let subject = certificate.getSubject()
 
-    let answer = "CN=pewpewthespells.com"
+    let answer = "C=JP,ST=Tokyo,O=Frank4DD,CN=www.example.com"
 
     check:
       subject == answer
@@ -113,7 +113,7 @@ suite "Certificate":
     let time = certificate.getExpirationTime()
     let date = utc(time)
 
-    let value = initDateTime(02, mMay, 2021, 16, 33, 42, utc())
+    let value = initDateTime(21, mAug, 2017, 5, 27, 41, utc())
 
     check:
       date == value
@@ -123,7 +123,8 @@ suite "Certificate":
     let time = certificate.getActivationTime()
     let date = utc(time)
 
-    let value = initDateTime(01, mFeb, 2021, 16, 33, 42, utc())
+
+    let value = initDateTime(22, mAug, 2012, 5, 27, 41, utc())
 
     check:
       value == date

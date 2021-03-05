@@ -41,26 +41,6 @@ type
     scanDirForRssFeed*: string
     baseUrl*: string
 
-  # PageKind* = enum
-  #   pkUnknown,
-  #   pkSource,
-  #   pkStatic
-
-  # PagePath* = tuple[content, metadata: string]
-
-  # Page* = ref PageObj
-  # PageObj = object
-  #   requestPath*: string
-  #   lastModTime*: Time
-  #   kind*: PageKind
-  #   # of pkSource:
-  #   sourcePath*: PagePath
-  #   cachePath*: string
-  #   # of pkStatic:
-  #   staticPath*: string
-  #   # of pkUnknown:
-  #     # discard
-
   FilePath* = object
     origin*: Option[string]
     directory*: string
@@ -73,6 +53,7 @@ type
     title*: string
     summary*: Option[string]
     date*: Option[string]
+    time*: Option[string]
     # private fields, use methods for these
     published*: bool
     root*: Option[bool]

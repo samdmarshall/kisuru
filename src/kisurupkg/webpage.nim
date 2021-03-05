@@ -118,7 +118,11 @@ proc expandWebpagePath*(conf: Configuration, strpath: string): string =
 
 proc expandPageUrl*(conf: Configuration, page: Webpage): string =
   # let relative_path = relativePath(page.path, conf.sourcePath)
-  result = fmt"{conf.baseUrl}/{page.path}"
+  let path_string = $page.path
+  if path_string.startsWith("/"):
+    result = fmt"{conf.baseUrl}{page.path}"
+  else:
+    result = fmt"{conf.baseUrl}/{page.path}"
   notice(fmt"composing full url: {result} -> ({page})")
 
 proc resolvePath*(conf: Configuration, filepath: string): Webpage =
@@ -180,27 +184,33 @@ proc fetchMetadata*(page: Webpage): PageMetadata =
 proc generate*(page: Webpage, metadata: PageMetadata): string {.gcsafe.} =
   echo fmt"generating page contents for request: {page.path}"
 
-  let content_path = page.sourcePath.getContentPath()
+  var generated_html = """<html><head><title>error!</title></head><body><div>failed to render page!</div></body></html>"""
 
-  var content: string
-  try:
-    var content_stream = openFileStream(content_path)
-    content = content_stream.readAll()
-    content_stream.close()
-  finally:
-    result = ""
+  case page.kind
+  of wpDynamic:
+    let content_path = page.sourcePath.getContentPath()
 
-  var generated_html: string
-  var generator: RstGenerator
-  try:
-    generator.initRstGenerator(outHtml, defaultConfig(), content_path, {})
-    var has_toc = false
-    let rst_data = rstParse(content, content_path, 1, 1, has_toc, {})
-    {.cast(gcsafe).}:
-      generator.renderRstToOut(rst_data, generated_html)
-      result = deepCopy(generated_html)
-  finally:
-    generated_html = """<html><head><title>error!</title></head><body><div>failed to render page!</div></body></html>"""
+    var content: string
+    try:
+      var content_stream = openFileStream(content_path)
+      content = content_stream.readAll()
+      content_stream.close()
+    finally:
+      result = ""
+
+    var generated_output: string
+    var generator: RstGenerator
+    try:
+      generator.initRstGenerator(outHtml, defaultConfig(), content_path, {})
+      var has_toc = false
+      let rst_data = rstParse(content, content_path, 1, 1, has_toc, {})
+      {.cast(gcsafe).}:
+        generator.renderRstToOut(rst_data, generated_output)
+        generated_html = deepCopy(generated_output)
+    finally:
+      discard
+  else:
+    discard
 
 proc updateCache*(page: Webpage, contents: string): bool =
   result = false

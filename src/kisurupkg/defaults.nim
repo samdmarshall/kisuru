@@ -62,6 +62,9 @@ const
 
   # Date & Time Formatters
   Default_Metadata_PostDate_Formatter* = "MMMM d, YYYY"
+  Default_Metadata_PostTime_Formatter* = "HH:mm"
+  Default_Metadata_PostTime_Ext_Formatter* = "HH:mm:ss"
+
   Default_PubDate_Date_Formatter* = "ddd, dd MMM YYYY"
-  Default_PubDate_Time_Formatter* = "HH:mm:ss z"
+  Default_PubDate_Time_Formatter* = "HH:mm:ss"
   Default_PubDate_DateTime_Formatter* = Default_PubDate_Date_Formatter & " " & Default_PubDate_Time_Formatter

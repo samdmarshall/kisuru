@@ -20,7 +20,6 @@ import kisurupkg/page/[ filepath ]
 type
   CommandLineInput* = object
     sitemapFile: string
-    flags: set[]
 
 # ===========
 # Entry Point

@@ -21,6 +21,7 @@ import "defaults.nim"
 import "models.nim"
 import "webpage.nim"
 import "page/filepath.nim"
+import "page/metadata.nim"
 
 # =========
 # Constants
@@ -60,49 +61,71 @@ proc postDateCompare(a: Webpage, b: Webpage): int =
   if a_date > b_date:
     result = 1
 
-proc generateRssItem(conf: Configuration, page: Webpage): XmlNode =
+proc generateRssItem(conf: Configuration, page: Webpage): tuple[published: bool, node: XmlNode] =
   let metadata = page.fetchMetadata()
 
   info(fmt"metadata: {metadata}")
 
   # check to see if the post is valid for creating an entry
 
-  result = <>item()
+  var node = <>item()
 
-  let title_node = newText(metadata.title)
-  let title = <>title(title_node)
-  result.add(title)
+  if metadata.isPublished():
+    let title_node = newText(metadata.title)
+    let title = <>title(title_node)
+    node.add(title)
 
-  var summary_text = ""
-  if metadata.summary.isSome():
-    summary_text = metadata.summary.get()
+    var summary_text = ""
+    if metadata.summary.isSome():
+      summary_text = metadata.summary.get()
 
-  let description_node = newText(summary_text)
-  let description = <>description(description_node)
-  result.add(description)
+    let description_node = newText(summary_text)
+    let description = <>description(description_node)
+    node.add(description)
 
-  let link_url = conf.expandPageUrl(page)
-  let link_node = newText(fmt"{link_url}")
-  let link = <>link(link_node)
-  result.add(link)
+    let link_url = conf.expandPageUrl(page)
+    let link_node = newText(fmt"{link_url}")
+    let link = <>link(link_node)
+    node.add(link)
 
-  var published_date_str = ""
-  if metadata.date.isSome():
-    published_date_str = metadata.date.get()
+    var published_date_str = ""
+    if metadata.date.isSome():
+      published_date_str = metadata.date.get()
 
-  if len(published_date_str) > 0:
-    let published_date = parse(published_date_str, Default_Metadata_PostDate_Formatter)
-    let published_time = initDuration(hours = 6, minutes = 6, seconds = 6)
-    let adjusted_date = published_date+published_time
-    let formatted_pub_date = adjusted_date.format(Default_PubDate_DateTime_Formatter)
+    var published_time_str = ""
+    if metadata.time.isSome():
+      published_time_str = metadata.time.get()
 
-    let pubdate_text = newText(formatted_pub_date)
+    var published_date: DateTime
+    if len(published_date_str) > 0:
+      published_date = parse(published_date_str, Default_Metadata_PostDate_Formatter)
+
+    var published_time = initDuration(hours = 6, minutes = 6, seconds = 6)
+    if len(published_time_str) > 0:
+      let time = parse(published_time_str, Default_Metadata_PostTime_Formatter)
+      published_time = initDuration(hours = int(time.hour()), minutes = int(time.minute()), seconds = int(time.second()))
+
+    let date = published_date+published_time
+    let formatted_pub_date = date.format(Default_PubDate_DateTime_Formatter)
+
+    let utc_offset = date.utcOffset
+    let utc_offset_time = initDuration(seconds = utc_offset)
+    let utc_offset_parts = toParts(utc_offset_time)
+    let utc_offset_symbol =
+      if utc_offset < 0: "+"
+      elif utc_offset > 0: "-"
+      else: "+"
+    let pubdate_text = newText(fmt"{formatted_pub_date} {utc_offset_symbol}{utc_offset_parts[Hours]:02d}{utc_offset_parts[Minutes]:02d}")
     let pubdate = <>pubDate(pubdate_text)
-    result.add(pubdate)
+    node.add(pubdate)
+
+  result = (metadata.isPublished(), node)
 
 
 proc generateRssFeedBody(conf: Configuration, pages: seq[Webpage]): XmlNode =
-  result = <>rss(version=Default_Version)
+  var rss_attrs = {"version": Default_Version, "xmlns:atom": "http://www.w3.org/2005/Atom"}.toXmlAttributes
+  result = newXmlTree("rss", [], rss_attrs)
+  # result = <>rss(version=Default_Version, `xmlns:atom`=)
 
   let title_text = newText("Samantha Demi's Blog")
   var title = <>title(title_text)
@@ -117,28 +140,40 @@ proc generateRssFeedBody(conf: Configuration, pages: seq[Webpage]): XmlNode =
   var language = <>language(language_text)
 
   var last_build_date_date = now()
+  let utc_offset = last_build_date_date.utcOffset
+  let utc_offset_time = initDuration(seconds = utc_offset)
+  let utc_offset_parts = toParts(utc_offset_time)
+  let utc_offset_symbol =
+    if utc_offset < 0: "+"
+    elif utc_offset > 0: "-"
+    else: "+"
   var last_build_date_text_str = last_build_date_date.format(Default_PubDate_DateTime_Formatter)
-  var last_build_date_text = newText(last_build_date_text_str)
+  var last_build_date_text = newText(fmt"{last_build_date_text_str} {utc_offset_symbol}{utc_offset_parts[Hours]:02d}{utc_offset_parts[Minutes]:02d}")
   var last_build_date = <>lastBuildDate(last_build_date_text)
 
   var generator_text = newText(fmt"Built with Nim: {NimVersion}, using 'xmltree' module of the standard library.")
   var generator = <>generator(generator_text)
+
+  var atom_attrs = {"href": fmt"{conf.baseUrl}/feed.xml", "rel": "self", "type": "application/rss+xml"}.toXmlAttributes
+  var atom = newXmlTree("atom:link", [], atom_attrs)
 
   let elements = [
     # Required Elements
     title, description, link,
 
     # Optional Elements
-    language, last_build_date, generator
+    language, last_build_date, generator,
+
+    atom
   ]
 
   var channel = newXmlTree(Tag_Channel, elements, newStringTable())
   result.add(channel)
 
   for page in pages:
-    let item = conf.generateRssItem(page)
-    # echo $item
-    channel.add(item)
+    let (published, node) = conf.generateRssItem(page)
+    if published:
+      channel.add(node)
 
 
 proc generateRssFeed*(conf: Configuration): string =
