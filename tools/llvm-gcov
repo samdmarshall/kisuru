@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+exec llvm-cov gcov "$@"
+# This is a basic wrapper for making `lcov` use the right code coverage tool when building with clang instead of gcc
+

@@ -2,4 +2,5 @@ published: yes
 title: Using LLVM Santitizers with Nim
 
 date: April 13, 2017
+time: 08:08
 summary: Short guide on how to use LLVM code sanitizers with Nim
